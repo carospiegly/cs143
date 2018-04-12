@@ -7,6 +7,7 @@
  *  output, so headers and global definitions are placed here to be visible
  * to the code in the file.  Don't remove anything that was here initially
  */
+
 %{
 #include <cool-parse.h>
 #include <stringtab.h>
@@ -42,6 +43,46 @@ extern YYSTYPE cool_yylval;
 /*
  *  Add Your own definitions here
  */
+
+ DIGIT [0-9]
+
+ LWR_APLH [a-z]
+ UPR_ALPH [A-Z]
+
+
+ INT [DIGIT+]
+
+ STRING "( ( [.] {-} [\0] ) | (\\n) )*"
+
+
+ CLASS (? i : class)
+ ELSE (? i : else)
+ FI (? i : fi)
+ IF (? i : if)
+ IN (? i : in)
+ INHERITS (? i : inherits)
+ ISVOID (? i : isvoid)
+ LET (? i : let)
+ LOOP (? i : loop)
+ POOL (? i : pool)
+ THEN (? i : then)
+ WHILE (? i : while)
+ CASE (? i : case)
+ ESAC (? i : esac)
+ NEW (? i : new)
+ OF (? i : of)
+ NOT (? i : not)
+
+ TRUE t (? i : rue)
+ FALSE f (? i : alse)
+ 
+ OBJ_ID LWR_ALPH [LWR_ALPH | UPR_ALPH | '_']*
+ TYPE_ID UPR_ALPH [LWR_ALPH | UPR_ALPH | '_']*
+ 
+ COMMENT ( '*' (.)* ( (.)* '*' (.)* '*' (.)* )* (.)* '*' ) | ( -- (.) * \n )
+
+ WHITESPACE ' ' | '\n' | '\f' | '\r' | '\t' | '\v'
+ 
 
 %}
 
