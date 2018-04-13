@@ -67,8 +67,10 @@ DARROW          =>
 
 \"			BEGIN(stringconst);
 <stringconst>[^"\0]*	printf("in string const %s", yytext);
-<stringconst>\"		BEGIN(0);
-
+<stringconst>\"		{
+				BEGIN(0);
+				cool_yylval.symbol = stringtable.add_string(yytext);
+			}
 <stringconst,comment><<EOF>>	{
 yyterminate();
 }
