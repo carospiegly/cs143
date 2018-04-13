@@ -66,7 +66,7 @@ DARROW          =>
 <comment>"*"+")"	BEGIN(0);
 
 \"			BEGIN(stringconst);
-<stringconst>[^"]*	printf("%s", yytext);
+<stringconst>[^"\0]*	printf("in string const %s", yytext);
 <stringconst>\"		BEGIN(0);
 
 <stringconst,comment><<EOF>>	{
@@ -74,7 +74,7 @@ yyterminate();
 }
 
 <stringconst>\0	{
-printf("string contains null character");
+printf("string contains null character\n");
 yyterminate();
 }
 
