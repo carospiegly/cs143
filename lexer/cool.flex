@@ -78,11 +78,20 @@ TRUE_KYWRD t[rR][uU][eE]
 
 LET_KYWRD [lL][eE][tT]
 
+LEQ	<=
+ASSIGN_KYWRD <-
+
 %%
 
  /*
   *  Nested comments
   */
+
+
+[ \f\r\t\v]+
+
+{LEQ}	return LE; 
+{ASSIGN_KYWRD} return ASSIGN;
 
 \=	return '=';
 \+	return '+';
@@ -176,7 +185,7 @@ LET_KYWRD [lL][eE][tT]
 		}
 
 {LET_KYWRD}	{
-			printf("caught keyword: %s, but ignoring it\n", yytext);
+			return LET;
 		}
 
 {DIGIT}+	{
