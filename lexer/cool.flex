@@ -86,57 +86,46 @@ LET_KYWRD [lL][eE][tT]
 
 
 {CLASS_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return CLASS;
 		}
 
 {ELSE_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return ELSE;
 		}
 
 {FI_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return FI;
 		}
 
 {IF_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return IF;
 		}
 
 {INHERITS_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return INHERITS;
 		}
 
 {IN_KYWRD}	{
-				printf("keyword: %s\n", yytext);
-				return IN;
-			}
+			return IN;
+		}
 
 {ISVOID_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return ISVOID;
 		}
 
 {LOOP_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return LOOP;
 		}
 
 {POOL_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return POOL;
 		}
 
 {THEN_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return THEN;
 		}
 
 {WHILE_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return WHILE;
 		}
 
@@ -176,7 +165,6 @@ LET_KYWRD [lL][eE][tT]
 		}
 
 {DIGIT}+	{
-			printf("integer %s\n", yytext);
 			cool_yylval.symbol = inttable.add_string(yytext);
 			return INT_CONST;
 		}
