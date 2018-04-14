@@ -61,7 +61,7 @@ ELSE_KYWRD [eE][lL][sS][eE]
 FI_KYWRD [fF][iI]
 IF_KYWRD [iI][fF]
 IN_KYWRD [iI][nN]
-INHERITS_KYWRD [iI][nN][hH][iI][rR][iI][tT][sS]
+INHERITS_KYWRD [iI][nN][hH][eE][rR][iI][tT][sS]
 ISVOID_KYWRD [iI][sS][vV][oO][iI][dD]
 LOOP_KYWRD [lL][oO][oO][pP]
 POOL_KYWRD [pP][oO][oO][lL]
@@ -75,6 +75,8 @@ NOT_KYWRD [nN][oO][tT]
 
 FALSE_KYWRD f[aA][lL][sS][eE]
 TRUE_KYWRD t[rR][uU][eE]
+
+LET_KYWRD [lL][eE][tT]
 
 %%
 
@@ -139,32 +141,26 @@ TRUE_KYWRD t[rR][uU][eE]
 		}
 
 {CASE_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return CASE;
 		}
 
 {ESAC_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return ESAC;
 		}
 
 {NEW_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return NEW;
 		}
 
 {OF_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return OF;
 		}
 
 {NOT_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			return NOT;
 		}
 
 {FALSE_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			cool_yylval.boolean = false;
 			return BOOL_CONST;
 		}
@@ -173,6 +169,10 @@ TRUE_KYWRD t[rR][uU][eE]
 			printf("keyword: %s\n", yytext);
 			cool_yylval.boolean = true;
 			return BOOL_CONST;
+		}
+
+{LET_KYWRD}	{
+			printf("caught keyword: %s, but ignoring it\n", yytext);
 		}
 
 {DIGIT}+	{
@@ -187,6 +187,7 @@ TRUE_KYWRD t[rR][uU][eE]
 			}
 
 {UPR_ALPH}[A-Za-z\_]*	{
+				cool_yylval.symbol = stringtable.add_string(yytext);
 				return TYPEID;	
 			}
 
@@ -200,6 +201,7 @@ TRUE_KYWRD t[rR][uU][eE]
 <stringconst>\"		{
 				BEGIN(0);
 				cool_yylval.symbol = stringtable.add_string(yytext);
+				return STR_CONST;
 			}
 <stringconst><<EOF>>	{
 				cool_yylval.error_msg = "EOF in string constant";
