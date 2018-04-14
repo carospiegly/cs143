@@ -200,12 +200,12 @@ END_COMMENT \*\)
 		}
 
 {LWR_ALPH}[A-Za-z0-9\_]*	{
-				cool_yylval.symbol = stringtable.add_string(yytext);
+				cool_yylval.symbol = idtable.add_string(yytext);
 				return OBJECTID;
 			}
 
 {UPR_ALPH}[A-Za-z0-9\_]*	{
-				cool_yylval.symbol = stringtable.add_string(yytext);
+				cool_yylval.symbol = idtable.add_string(yytext);
 				return TYPEID;	
 			}
 
