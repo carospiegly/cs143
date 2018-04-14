@@ -84,6 +84,7 @@ LET_KYWRD [lL][eE][tT]
   *  Nested comments
   */
 
+\=	return '=';
 \+	return '+';
 \*	return '*';
 \-	return '-';
@@ -97,7 +98,7 @@ LET_KYWRD [lL][eE][tT]
 \{	return '{';
 \}	return '}';
 \:	return ':';
-
+\.	return '.';
 
 {CLASS_KYWRD}	{
 			return CLASS;
