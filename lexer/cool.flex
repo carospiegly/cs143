@@ -80,6 +80,8 @@ LET_KYWRD [lL][eE][tT]
 
 LEQ	<=
 ASSIGN_KYWRD <-
+BEGIN_COMMENT \(\*
+END_COMMENT \*\)
 
 %%
 
@@ -87,6 +89,9 @@ ASSIGN_KYWRD <-
   *  Nested comments
   */
 
+{BEGIN_COMMENT}         BEGIN(comment);
+\n                      ++curr_lineno;
+<comment>{END_COMMENT}	BEGIN(0);
 
 [ \f\r\t\v]+
 
@@ -210,9 +215,6 @@ ASSIGN_KYWRD <-
 				return ERROR;
 			}
 
-"("+"*"			BEGIN(comment);
-\n			++curr_lineno;
-<comment>"*"+")"	BEGIN(0);
 
 \"			BEGIN(stringconst);
 <stringconst>[^"\0]*	printf("in string const %s\n", yytext);
