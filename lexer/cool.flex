@@ -54,6 +54,27 @@ extern YYSTYPE cool_yylval;
 
 DARROW          =>
 DIGIT [0-9]
+LWR_ALPH [a-z]
+UPR_ALPH [A-Z]
+CLASS_KYWRD [cC][lL][aA][sS][sS]
+ELSE_KYWRD [eE][lL][sS][eE]
+FI_KYWRD [fF][iI]
+IF_KYWRD [iI][fF]
+IN_KYWRD [iI][nN]
+INHERITS_KYWRD [iI][nN][hH][iI][rR][iI][tT][sS]
+ISVOID_KYWRD [iI][sS][vV][oO][iI][dD]
+LOOP_KYWRD [lL][oO][oO][pP]
+POOL_KYWRD [pP][oO][oO][lL]
+THEN_KYWRD [tT][hH][eE][nN]
+WHILE_KYWRD [wW][hH][iI][lL][eE]
+CASE_KYWRD [cC][aA][sS][eE]
+ESAC_KYWRD [eE][sS][aA][cC]
+NEW_KYWRD [nN][eE][wW]
+OF_KYWRD [oO][fF]
+NOT_KYWRD [nN][oO][tT]
+
+FALSE_KYWRD f[aA][lL][sS][eE]
+TRUE_KYWRD t[rR][uU][eE]
 
 %%
 
@@ -61,11 +82,114 @@ DIGIT [0-9]
   *  Nested comments
   */
 
-{DIGIT}+		{
-				printf("integer %s\n", yytext);
-				cool_yylval.symbol = inttable.add_string(yytext);
-				return INT_CONST;
+
+{CLASS_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return CLASS;
+		}
+
+{ELSE_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return ELSE;
+		}
+
+{FI_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return FI;
+		}
+
+{IF_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return IF;
+		}
+
+{INHERITS_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return INHERITS;
+		}
+
+{IN_KYWRD}	{
+				printf("keyword: %s\n", yytext);
+				return IN;
 			}
+
+{ISVOID_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return ISVOID;
+		}
+
+{LOOP_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return LOOP;
+		}
+
+{POOL_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return POOL;
+		}
+
+{THEN_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return THEN;
+		}
+
+{WHILE_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return WHILE;
+		}
+
+{CASE_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return CASE;
+		}
+
+{ESAC_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return ESAC;
+		}
+
+{NEW_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return NEW;
+		}
+
+{OF_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return OF;
+		}
+
+{NOT_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			return NOT;
+		}
+
+{FALSE_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			cool_yylval.boolean = false;
+			return BOOL_CONST;
+		}
+
+{TRUE_KYWRD}	{
+			printf("keyword: %s\n", yytext);
+			cool_yylval.boolean = true;
+			return BOOL_CONST;
+		}
+
+{DIGIT}+	{
+			printf("integer %s\n", yytext);
+			cool_yylval.symbol = inttable.add_string(yytext);
+			return INT_CONST;
+		}
+
+{LWR_ALPH}[A-Za-z\_]*	{
+				printf("keyword %s\n", yytext);
+				return OBJECTID;
+			}
+
+{UPR_ALPH}[A-Za-z\_]*	{
+				return TYPEID;	
+			}
+
 
 "("+"*"			BEGIN(comment);
 \n			++curr_lineno;
@@ -77,14 +201,23 @@ DIGIT [0-9]
 				BEGIN(0);
 				cool_yylval.symbol = stringtable.add_string(yytext);
 			}
-<stringconst,comment><<EOF>>	{
-yyterminate();
-}
+<stringconst><<EOF>>	{
+				cool_yylval.error_msg = "EOF in string constant";
+				yyterminate();
+				return ERROR;
+			}
 
-<stringconst>\0	{
-printf("string contains null character\n");
-yyterminate();
-return ERROR;
+<comment><<EOF>>	{
+				cool_yylval.error_msg = "EOF in comment";
+				yyterminate();
+				return ERROR;
+			}
+
+<stringconst>\0		{
+				cool_yylval.error_msg = "String contains null character";
+				printf("string contains null character\n");
+				yyterminate();
+				return ERROR;
 }
 
 
