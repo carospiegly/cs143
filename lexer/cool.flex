@@ -90,6 +90,7 @@ END_COMMENT \*\)
   */
 
 {BEGIN_COMMENT}         BEGIN(comment);
+
 \n                      ++curr_lineno;
 <comment>{END_COMMENT}	BEGIN(0);
 
@@ -208,7 +209,7 @@ END_COMMENT \*\)
 				return TYPEID;	
 			}
 
-"*"+")"			{
+{END_COMMENT}		{
 				printf("Unmatched *)");
 				cool_yylval.error_msg = "Unmatched *)";
 				yyterminate();
@@ -240,7 +241,7 @@ END_COMMENT \*\)
 				printf("string contains null character\n");
 				yyterminate();
 				return ERROR;
-}
+			}
 
 
  /*
