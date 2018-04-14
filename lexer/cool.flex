@@ -84,6 +84,20 @@ LET_KYWRD [lL][eE][tT]
   *  Nested comments
   */
 
+\+	return '+';
+\*	return '*';
+\-	return '-';
+\;	return ';';
+\,	return ',';
+\~	return '~';
+\<	return '<';
+\(	return '(';
+\)	return ')';
+\/	return '/';
+\{	return '{';
+\}	return '}';
+\:	return ':';
+
 
 {CLASS_KYWRD}	{
 			return CLASS;
@@ -169,16 +183,22 @@ LET_KYWRD [lL][eE][tT]
 			return INT_CONST;
 		}
 
-{LWR_ALPH}[A-Za-z\_]*	{
-				printf("keyword %s\n", yytext);
+{LWR_ALPH}[A-Za-z0-9\_]*	{
+				cool_yylval.symbol = stringtable.add_string(yytext);
 				return OBJECTID;
 			}
 
-{UPR_ALPH}[A-Za-z\_]*	{
+{UPR_ALPH}[A-Za-z0-9\_]*	{
 				cool_yylval.symbol = stringtable.add_string(yytext);
 				return TYPEID;	
 			}
 
+"*"+")"			{
+				printf("Unmatched *)");
+				cool_yylval.error_msg = "Unmatched *)";
+				yyterminate();
+				return ERROR;
+			}
 
 "("+"*"			BEGIN(comment);
 \n			++curr_lineno;
