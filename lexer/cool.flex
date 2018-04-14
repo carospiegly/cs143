@@ -53,6 +53,7 @@ extern YYSTYPE cool_yylval;
  */
 
 DARROW          =>
+DIGIT [0-9]
 
 %%
 
@@ -60,13 +61,18 @@ DARROW          =>
   *  Nested comments
   */
 
+{DIGIT}+		{
+				printf("integer %s\n", yytext);
+				cool_yylval.symbol = inttable.add_string(yytext);
+				return INT_CONST;
+			}
 
 "("+"*"			BEGIN(comment);
-<comment>\n		++curr_lineno;
+\n			++curr_lineno;
 <comment>"*"+")"	BEGIN(0);
 
 \"			BEGIN(stringconst);
-<stringconst>[^"\0]*	printf("in string const %s", yytext);
+<stringconst>[^"\0]*	printf("in string const %s\n", yytext);
 <stringconst>\"		{
 				BEGIN(0);
 				cool_yylval.symbol = stringtable.add_string(yytext);
@@ -78,6 +84,7 @@ yyterminate();
 <stringconst>\0	{
 printf("string contains null character\n");
 yyterminate();
+return ERROR;
 }
 
 
