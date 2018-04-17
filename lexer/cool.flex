@@ -33,11 +33,14 @@ extern FILE *fin; /* we read from this file */
 
 char string_buf[MAX_STR_CONST]; /* to assemble string constants */
 char *string_buf_ptr;
+static int NUM_COMMENT_CNTR = 0;
 
 extern int curr_lineno;
 extern int verbose_flag;
 
 extern YYSTYPE cool_yylval;
+
+void remove_escape_chars(char* buf);
 
 /*
  *  Add Your own definitions here
@@ -93,11 +96,24 @@ SL_COMMENT_KYWRD \-\-
   *  Nested comments
   */
 
-{BEGIN_ML_COMMENT}         BEGIN(multilinecomment);
+{BEGIN_ML_COMMENT}	{
+				BEGIN(multilinecomment);
+				NUM_COMMENT_CNTR++;
+			}
 
 \n                      		++curr_lineno;
 <multilinecomment>\n             	++curr_lineno;
-<multilinecomment>{END_ML_COMMENT}	BEGIN(0);
+
+<multilinecomment>{BEGIN_ML_COMMENT}    {
+                                		NUM_COMMENT_CNTR++;
+                        		}
+
+
+<multilinecomment>{END_ML_COMMENT}	{
+						NUM_COMMENT_CNTR--;
+						if(NUM_COMMENT_CNTR == 0)
+							BEGIN(0);
+					}
 <multilinecomment>.
 
 {SL_COMMENT_KYWRD}	BEGIN(singlelinecomment);
@@ -203,7 +219,6 @@ SL_COMMENT_KYWRD \-\-
 		}
 
 {TRUE_KYWRD}	{
-			printf("keyword: %s\n", yytext);
 			cool_yylval.boolean = true;
 			return BOOL_CONST;
 		}
@@ -247,6 +262,7 @@ SL_COMMENT_KYWRD \-\-
 					return ERROR;
 				}
 				strcpy(string_buf, yytext);
+				remove_escape_chars(string_buf);
 			}
 
 <stringconst>\"		{
@@ -295,3 +311,37 @@ SL_COMMENT_KYWRD \-\-
 
 
 %%
+
+void remove_escape_chars(char* buf)
+{
+int offset = 0;
+for (int i = 0; i < strlen(buf)-1; i++){
+	if ( buf[i]=='\\' ){
+		if ( buf[i+1]=='n' ){
+			buf[i-offset]='\n';
+			offset++;
+		}else if ( buf[i+1]=='t' ){
+			buf[i-offset]=9;
+			offset++;
+		}else if ( buf[i+1]=='b' ){
+			buf[i-offset]='\b';
+			offset++;
+		}else if ( buf[i+1]=='f' ){
+			buf[i-offset]='\f';
+			offset++;
+		}else if ( buf[i+1]=='0' ){
+			buf[i-offset]='\0';
+			offset++;
+		}else{ 
+		     buf[i-offset] = buf[i];
+		}
+	
+	}else{
+	
+	buf[i-offset] = buf[i];
+
+	}
+}
+buf[strlen(buf)-offset] = '\0';
+//memset(buf+strlen(buf)-offset,0,offset);
+}
