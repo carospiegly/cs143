@@ -250,11 +250,7 @@ SL_COMMENT_KYWRD \-\-
 			}
 
 
-\"			{
-				BEGIN(stringconst);
-				memset(string_buf, 0, MAX_STR_CONST);
-			}
-
+\"			BEGIN(stringconst);
 <stringconst>[^"\0]*	{
 				if(strlen(yytext) > (MAX_STR_CONST-1) ) 
 				{
@@ -320,44 +316,46 @@ bool verify_last_char_replaced(int i,char *buf)
 void remove_escape_chars(char* buf)
 {
 int offset = 0;
-int i;
-bool last_char_replaced = false;
-for (i = 0; i < strlen(buf)-1; i++){
-	if ( buf[i]=='\\' ){
-		if ( buf[i+1]=='n' ){
-			buf[i-offset]='\n';
-			i++; offset++;
-			last_char_replaced = verify_last_char_replaced(i,buf);
-		}else if ( buf[i+1]=='t' ){
-			buf[i-offset]=9;
-			i++; offset++;
-			last_char_replaced = verify_last_char_replaced(i,buf);
-		}else if ( buf[i+1]=='b' ){
-			buf[i-offset]='\b';
-			i++; offset++;
-			last_char_replaced = verify_last_char_replaced(i,buf);
-		}else if ( buf[i+1]=='f' ){
-			buf[i-offset]='\f';
-			i++; offset++;
-			last_char_replaced = verify_last_char_replaced(i,buf);
-		}else if ( buf[i+1]=='0' ){
-			buf[i-offset]='\0';
-			i++; offset++;
-			last_char_replaced = verify_last_char_replaced(i,buf);
+for (int i = 0; i < strlen(buf)-1; i++){
+	if ( buf[i] == '\\' ){
+		if ( buf[i+1] == 'n' ){
+			buf[i-offset] = 0x0A;
+			offset++;
+      i++;
+      last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 't' ){
+			buf[i-offset] = 0x09;
+			offset++;
+      i++;
+      last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'b' ){
+			buf[i-offset] = 0x08;
+			offset++;
+      i++;
+      last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'f' ){
+			buf[i-offset] = 0x0C;
+			offset++;
+      i++;
+      last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == '0' ){
+			buf[i-offset] = '0';
+			offset++;
+      i++;
+      last_char_replaced = verify_last_char_replaced(i,buf);
 		}else{ 
 		     buf[i-offset] = buf[i];
 		}
 	
 	}else{
-	
 		buf[i-offset] = buf[i];
-
 	}
 }
 if(!last_char_replaced) {
 	i = strlen(buf)-1;
 	buf[i-offset] = buf[i];
 }
-buf[strlen(buf)-offset] = '\0';
-//memset(buf+strlen(buf)-offset,0,offset);
+  buf[strlen(buf)-offset] = '\0';
 }
+
+
