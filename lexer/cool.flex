@@ -95,6 +95,8 @@ END_COMMENT \*\)
 <comment>\n             ++curr_lineno;
 <comment>{END_COMMENT}	BEGIN(0);
 
+<comment>.
+
 [ \f\r\t\v]+
 
 {LEQ}	return LE; 
