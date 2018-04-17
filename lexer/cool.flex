@@ -250,11 +250,7 @@ SL_COMMENT_KYWRD \-\-
 			}
 
 
-\"			{
-				BEGIN(stringconst);
-				memset(string_buf, 0, MAX_STR_CONST);
-			}
-
+\"			BEGIN(stringconst);
 <stringconst>[^"\0]*	{
 				if(strlen(yytext) > (MAX_STR_CONST-1) ) 
 				{
@@ -316,32 +312,36 @@ void remove_escape_chars(char* buf)
 {
 int offset = 0;
 for (int i = 0; i < strlen(buf)-1; i++){
-	if ( buf[i]=='\\' ){
-		if ( buf[i+1]=='n' ){
-			buf[i-offset]='\n';
+	if ( buf[i] == '\\' ){
+		if ( buf[i+1] == 'n' ){
+			buf[i-offset] = 0x0A;
 			offset++;
-		}else if ( buf[i+1]=='t' ){
-			buf[i-offset]=9;
+      i++;
+		}else if ( buf[i+1] == 't' ){
+			buf[i-offset] = 0x09;
 			offset++;
-		}else if ( buf[i+1]=='b' ){
-			buf[i-offset]='\b';
+      i++;
+		}else if ( buf[i+1] == 'b' ){
+			buf[i-offset] = 0x08;
 			offset++;
-		}else if ( buf[i+1]=='f' ){
-			buf[i-offset]='\f';
+      i++;
+		}else if ( buf[i+1] == 'f' ){
+			buf[i-offset] = 0x0C;
 			offset++;
-		}else if ( buf[i+1]=='0' ){
-			buf[i-offset]='\0';
+      i++;
+		}else if ( buf[i+1] == '0' ){
+			buf[i-offset] = '0';
 			offset++;
+      i++;
 		}else{ 
 		     buf[i-offset] = buf[i];
 		}
 	
 	}else{
-	
-	buf[i-offset] = buf[i];
-
+	       buf[i-offset] = buf[i];
 	}
 }
-buf[strlen(buf)-offset] = '\0';
-//memset(buf+strlen(buf)-offset,0,offset);
+   buf[strlen(buf)-offset] = '\0';
 }
+
+
