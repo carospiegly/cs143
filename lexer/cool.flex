@@ -92,6 +92,7 @@ END_COMMENT \*\)
 {BEGIN_COMMENT}         BEGIN(comment);
 
 \n                      ++curr_lineno;
+<comment>\n             ++curr_lineno;
 <comment>{END_COMMENT}	BEGIN(0);
 
 [ \f\r\t\v]+
