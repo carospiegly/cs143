@@ -34,7 +34,7 @@ extern FILE *fin; /* we read from this file */
 char string_buf[MAX_STR_CONST]; /* to assemble string constants */
 char *string_buf_ptr;
 static int NUM_COMMENT_CNTR = 0;
-
+static int STRING_BUF_IDX = 0;
 extern int curr_lineno;
 extern int verbose_flag;
 
@@ -51,6 +51,7 @@ void remove_escape_chars(char* buf);
 %x multilinecomment
 %x singlelinecomment
 %x stringconst
+%x recoverystringerror
 
 /*
  * Define names for regular expressions here.
@@ -243,7 +244,6 @@ SL_COMMENT_KYWRD \-\-
 			}
 
 {END_ML_COMMENT}		{
-				printf("Unmatched *)");
 				cool_yylval.error_msg = "Unmatched *)";
 				yyterminate();
 				return ERROR;
@@ -252,20 +252,44 @@ SL_COMMENT_KYWRD \-\-
 
 \"			{
 				BEGIN(stringconst);
+				STRING_BUF_IDX = 0;
 				memset(string_buf, 0, MAX_STR_CONST);
 			}
-<stringconst>[^"\0]*	{
-				if(strlen(yytext) > (MAX_STR_CONST-1) ) 
+
+<stringconst>\\\n	{
+                                if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) )
+                                {
+                                        cool_yylval.error_msg = "String constant too long";
+                                        return ERROR;
+                                }
+                                string_buf[STRING_BUF_IDX] = yytext[0];
+				string_buf[STRING_BUF_IDX] = yytext[1];
+                       		string_buf[STRING_BUF_IDX+2] = '\0';
+				STRING_BUF_IDX++;
+				++curr_lineno;
+			 }	
+
+<stringconst>[^"\0\n]	{
+				if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) ) 
 				{
 					cool_yylval.error_msg = "String constant too long";
 					return ERROR;
 				}
-				strcpy(string_buf, yytext);
-				remove_escape_chars(string_buf);
+				string_buf[STRING_BUF_IDX] = yytext[0];
+				string_buf[STRING_BUF_IDX+1] = '\0';
+				STRING_BUF_IDX++;
+			}
+	
+
+
+<stringconst>\n		{
+				BEGIN(recoverystringerror);
 			}
 
 <stringconst>\"		{
 				BEGIN(0);
+				if( STRING_BUF_IDX > 0)
+					remove_escape_chars(string_buf);
 				cool_yylval.symbol = stringtable.add_string(string_buf);
 				return STR_CONST;
 			}
@@ -276,16 +300,24 @@ SL_COMMENT_KYWRD \-\-
 				return ERROR;
 			}
 
-<multilinecomment><<EOF>>	{
-				cool_yylval.error_msg = "EOF in comment";
-				yyterminate();
+<recoverystringerror>\"|\n	{
+				cool_yylval.error_msg = "Unterminated string constant";
 				return ERROR;
+				BEGIN(0);		
 			}
+
+<recoverystringerror>.
+
+<multilinecomment><<EOF>>	{
+					cool_yylval.error_msg = "EOF in comment";
+					yyterminate();
+					return ERROR;
+				}
 
 <stringconst>\0		{
 				cool_yylval.error_msg = "String contains null character";
 				printf("string contains null character\n");
-				yyterminate();
+				BEGIN(recoverystringerror);
 				return ERROR;
 			}
 
