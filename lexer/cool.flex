@@ -235,7 +235,11 @@ SL_COMMENT_KYWRD \-\-
 			}
 
 
-\"			BEGIN(stringconst);
+\"			{
+				BEGIN(stringconst);
+				memset(string_buf, 0, MAX_STR_CONST);
+			}
+
 <stringconst>[^"\0]*	{
 				if(strlen(yytext) > (MAX_STR_CONST-1) ) 
 				{
