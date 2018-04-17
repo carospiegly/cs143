@@ -219,6 +219,11 @@ END_COMMENT \*\)
 
 \"			BEGIN(stringconst);
 <stringconst>[^"\0]*	{
+				if(strlen(yytext) > (MAX_STR_CONST-1) ) 
+				{
+					cool_yylval.error_msg = "String constant too long";
+					return ERROR;
+				}
 				strcpy(string_buf, yytext);
 			}
 
