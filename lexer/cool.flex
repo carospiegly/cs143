@@ -45,7 +45,8 @@ extern YYSTYPE cool_yylval;
 
 %}
 
-%x comment
+%x multilinecomment
+%x singlelinecomment
 %x stringconst
 
 /*
@@ -80,8 +81,11 @@ LET_KYWRD [lL][eE][tT]
 
 LEQ	<=
 ASSIGN_KYWRD <-
-BEGIN_COMMENT \(\*
-END_COMMENT \*\)
+BEGIN_ML_COMMENT \(\*
+END_ML_COMMENT \*\)
+
+SL_COMMENT_KYWRD \-\-
+
 
 %%
 
@@ -89,13 +93,24 @@ END_COMMENT \*\)
   *  Nested comments
   */
 
-{BEGIN_COMMENT}         BEGIN(comment);
+{BEGIN_ML_COMMENT}         BEGIN(multilinecomment);
 
-\n                      ++curr_lineno;
-<comment>\n             ++curr_lineno;
-<comment>{END_COMMENT}	BEGIN(0);
+\n                      		++curr_lineno;
+<multilinecomment>\n             	++curr_lineno;
+<multilinecomment>{END_ML_COMMENT}	BEGIN(0);
+<multilinecomment>.
 
-<comment>.
+{SL_COMMENT_KYWRD}	BEGIN(singlelinecomment);
+
+
+<singlelinecomment>{SL_COMMENT_KYWRD}	BEGIN(0);
+
+<singlelinecomment><<EOF>>	
+<singlelinecomment>\n	{
+				BEGIN(0);
+				++curr_lineno;
+			}
+<singlelinecomment>.
 
 [ \f\r\t\v]+
 
@@ -212,7 +227,7 @@ END_COMMENT \*\)
 				return TYPEID;	
 			}
 
-{END_COMMENT}		{
+{END_ML_COMMENT}		{
 				printf("Unmatched *)");
 				cool_yylval.error_msg = "Unmatched *)";
 				yyterminate();
@@ -242,7 +257,7 @@ END_COMMENT \*\)
 				return ERROR;
 			}
 
-<comment><<EOF>>	{
+<multilinecomment><<EOF>>	{
 				cool_yylval.error_msg = "EOF in comment";
 				yyterminate();
 				return ERROR;
