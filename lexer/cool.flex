@@ -148,6 +148,7 @@ SL_COMMENT_KYWRD \-\-
 \}	return '}';
 \:	return ':';
 \.	return '.';
+\@	return '@';
 
 {CLASS_KYWRD}	{
 			return CLASS;
@@ -312,35 +313,51 @@ SL_COMMENT_KYWRD \-\-
 
 %%
 
+bool verify_last_char_replaced(int i,char *buf)
+{
+	return i==strlen(buf)-1;
+}
+
 void remove_escape_chars(char* buf)
 {
 int offset = 0;
-for (int i = 0; i < strlen(buf)-1; i++){
+int i;
+bool last_char_replaced = false;
+for (i = 0; i < strlen(buf)-1; i++){
 	if ( buf[i]=='\\' ){
 		if ( buf[i+1]=='n' ){
 			buf[i-offset]='\n';
-			offset++;
+			i++; offset++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1]=='t' ){
 			buf[i-offset]=9;
-			offset++;
+			i++; offset++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1]=='b' ){
 			buf[i-offset]='\b';
-			offset++;
+			i++; offset++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1]=='f' ){
 			buf[i-offset]='\f';
-			offset++;
+			i++; offset++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1]=='0' ){
 			buf[i-offset]='\0';
-			offset++;
+			i++; offset++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else{ 
 		     buf[i-offset] = buf[i];
 		}
 	
 	}else{
 	
-	buf[i-offset] = buf[i];
+		buf[i-offset] = buf[i];
 
 	}
+}
+if(!last_char_replaced) {
+	i = strlen(buf)-1;
+	buf[i-offset] = buf[i];
 }
 buf[strlen(buf)-offset] = '\0';
 //memset(buf+strlen(buf)-offset,0,offset);
