@@ -218,12 +218,16 @@ END_COMMENT \*\)
 
 
 \"			BEGIN(stringconst);
-<stringconst>[^"\0]*	printf("in string const %s\n", yytext);
+<stringconst>[^"\0]*	{
+				strcpy(string_buf, yytext);
+			}
+
 <stringconst>\"		{
 				BEGIN(0);
-				cool_yylval.symbol = stringtable.add_string(yytext);
+				cool_yylval.symbol = stringtable.add_string(string_buf);
 				return STR_CONST;
 			}
+
 <stringconst><<EOF>>	{
 				cool_yylval.error_msg = "EOF in string constant";
 				yyterminate();
