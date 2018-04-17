@@ -250,7 +250,10 @@ SL_COMMENT_KYWRD \-\-
 			}
 
 
-\"			BEGIN(stringconst);
+\"			{
+				BEGIN(stringconst);
+				memset(string_buf, 0, MAX_STR_CONST);
+			}
 <stringconst>[^"\0]*	{
 				if(strlen(yytext) > (MAX_STR_CONST-1) ) 
 				{
@@ -315,8 +318,10 @@ bool verify_last_char_replaced(int i,char *buf)
 
 void remove_escape_chars(char* buf)
 {
+int i;
+bool last_char_replaced = false;
 int offset = 0;
-for (int i = 0; i < strlen(buf)-1; i++){
+for (i = 0; i < strlen(buf)-1; i++){
 	if ( buf[i] == '\\' ){
 		if ( buf[i+1] == 'n' ){
 			buf[i-offset] = 0x0A;
