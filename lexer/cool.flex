@@ -119,7 +119,6 @@ SL_COMMENT_KYWRD \-\-
 {SL_COMMENT_KYWRD}	BEGIN(singlelinecomment);
 
 
-<singlelinecomment>{SL_COMMENT_KYWRD}	BEGIN(0);
 
 <singlelinecomment><<EOF>>	
 <singlelinecomment>\n	{
