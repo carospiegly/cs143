@@ -245,7 +245,7 @@ SL_COMMENT_KYWRD \-\-
 
 {END_ML_COMMENT}		{
 				cool_yylval.error_msg = "Unmatched *)";
-				yyterminate();
+				BEGIN(0);
 				return ERROR;
 			}
 
