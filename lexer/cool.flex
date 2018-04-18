@@ -300,10 +300,10 @@ SL_COMMENT_KYWRD \-\-
 				return ERROR;
 			}
 
-<recoverystringerror>\"|\n	{
+<recoverystringerror>\n	{
 				cool_yylval.error_msg = "Unterminated string constant";
-				return ERROR;
-				BEGIN(0);		
+				BEGIN(0);
+        return ERROR;		
 			}
 
 <recoverystringerror>.
