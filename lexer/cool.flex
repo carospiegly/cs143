@@ -263,11 +263,25 @@ SL_COMMENT_KYWRD \-\-
                                         return ERROR;
                                 }
                                 string_buf[STRING_BUF_IDX] = yytext[0];
-				string_buf[STRING_BUF_IDX] = yytext[1];
+				string_buf[STRING_BUF_IDX+1] = yytext[1];
                        		string_buf[STRING_BUF_IDX+2] = '\0';
 				STRING_BUF_IDX++;
 				++curr_lineno;
 			 }	
+
+<stringconst>\\\"|\\\\	{
+                          	// escaped backslashes
+			        if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) )
+                                {
+                                        cool_yylval.error_msg = "String constant too long";
+                                        return ERROR;
+                                }
+                                string_buf[STRING_BUF_IDX] = yytext[0];
+                                string_buf[STRING_BUF_IDX+1] = yytext[1];
+                                string_buf[STRING_BUF_IDX+2] = '\0';
+                                STRING_BUF_IDX += 2;
+                         }
+
 
 <stringconst>[^"\0\n]	{
 				if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) ) 
@@ -306,7 +320,7 @@ SL_COMMENT_KYWRD \-\-
         return ERROR;		
 			}
 
-<recoverystringerror>.
+<recoverystringerror>.		
 
 <multilinecomment><<EOF>>	{
 					cool_yylval.error_msg = "EOF in comment";
@@ -316,7 +330,6 @@ SL_COMMENT_KYWRD \-\-
 
 <stringconst>\0		{
 				cool_yylval.error_msg = "String contains null character";
-				printf("string contains null character\n");
 				BEGIN(recoverystringerror);
 				return ERROR;
 			}
@@ -358,28 +371,28 @@ for (i = 0; i < strlen(buf)-1; i++){
 		if ( buf[i+1] == 'n' ){
 			buf[i-offset] = 0x0A;
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == 't' ){
 			buf[i-offset] = 0x09;
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == 'b' ){
 			buf[i-offset] = 0x08;
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+      			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == 'f' ){
 			buf[i-offset] = 0x0C;
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == '0' ){
 			buf[i-offset] = '0';
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else{ 
 		     buf[i-offset] = buf[i];
 		}
