@@ -251,25 +251,43 @@ SL_COMMENT_KYWRD \-\-
 
 
 \"			{
+				printf("point1\n: yytext=%s\n", yytext);
 				BEGIN(stringconst);
 				STRING_BUF_IDX = 0;
 				memset(string_buf, 0, MAX_STR_CONST);
 			}
 
 <stringconst>\\\n	{
+				printf("point2\n");
                                 if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) )
                                 {
                                         cool_yylval.error_msg = "String constant too long";
                                         return ERROR;
                                 }
                                 string_buf[STRING_BUF_IDX] = yytext[0];
-				string_buf[STRING_BUF_IDX] = yytext[1];
+				string_buf[STRING_BUF_IDX+1] = yytext[1];
                        		string_buf[STRING_BUF_IDX+2] = '\0';
 				STRING_BUF_IDX++;
 				++curr_lineno;
 			 }	
 
+<stringconst>\\\"|\\\\	{
+				printf("point3: yytext=%s\n", yytext);
+                          	// escaped backslashes
+			        if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) )
+                                {
+                                        cool_yylval.error_msg = "String constant too long";
+                                        return ERROR;
+                                }
+                                string_buf[STRING_BUF_IDX] = yytext[0];
+                                string_buf[STRING_BUF_IDX+1] = yytext[1];
+                                string_buf[STRING_BUF_IDX+2] = '\0';
+                                STRING_BUF_IDX += 2;
+                         }
+
+
 <stringconst>[^"\0\n]	{
+				printf("point4: yytext=%s\n", yytext);
 				if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) ) 
 				{
 					cool_yylval.error_msg = "String constant too long";
@@ -278,15 +296,18 @@ SL_COMMENT_KYWRD \-\-
 				string_buf[STRING_BUF_IDX] = yytext[0];
 				string_buf[STRING_BUF_IDX+1] = '\0';
 				STRING_BUF_IDX++;
+				printf("point4: string_buf=%s\n", string_buf);
 			}
 	
 
 
 <stringconst>\n		{
+				printf("point5: yytext=%s\n", yytext);
 				BEGIN(recoverystringerror);
 			}
 
 <stringconst>\"		{
+				printf("point6\n");
 				BEGIN(0);
 				if( STRING_BUF_IDX > 0)
 					remove_escape_chars(string_buf);
@@ -301,12 +322,13 @@ SL_COMMENT_KYWRD \-\-
 			}
 
 <recoverystringerror>\"|\n	{
+				printf("point7\n");
 				cool_yylval.error_msg = "Unterminated string constant";
 				return ERROR;
 				BEGIN(0);		
 			}
 
-<recoverystringerror>.
+<recoverystringerror>.		printf("point8\n");
 
 <multilinecomment><<EOF>>	{
 					cool_yylval.error_msg = "EOF in comment";
@@ -350,6 +372,7 @@ bool verify_last_char_replaced(int i,char *buf)
 
 void remove_escape_chars(char* buf)
 {
+printf("buf before: %s", buf);
 int i;
 bool last_char_replaced = false;
 int offset = 0;
@@ -358,28 +381,28 @@ for (i = 0; i < strlen(buf)-1; i++){
 		if ( buf[i+1] == 'n' ){
 			buf[i-offset] = 0x0A;
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == 't' ){
 			buf[i-offset] = 0x09;
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == 'b' ){
 			buf[i-offset] = 0x08;
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+      			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == 'f' ){
 			buf[i-offset] = 0x0C;
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == '0' ){
 			buf[i-offset] = '0';
 			offset++;
-      i++;
-      last_char_replaced = verify_last_char_replaced(i,buf);
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else{ 
 		     buf[i-offset] = buf[i];
 		}
@@ -393,6 +416,7 @@ if(!last_char_replaced) {
 	buf[i-offset] = buf[i];
 }
   buf[strlen(buf)-offset] = '\0';
+printf("buf after: %s", buf);
 }
 
 
