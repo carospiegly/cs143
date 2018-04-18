@@ -686,8 +686,8 @@ static yyconst flex_int16_t yy_rule_linenum[62] =
       144,  145,  146,  147,  148,  149,  150,  151,  153,  157,
       161,  165,  169,  173,  177,  181,  185,  189,  193,  197,
       201,  205,  209,  213,  217,  222,  227,  231,  236,  241,
-      246,  253,  259,  272,  286,  299,  303,  317,  323,  331,
-      341
+      246,  252,  258,  271,  285,  298,  302,  316,  322,  330,
+      340
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -1452,13 +1452,12 @@ YY_RULE_SETUP
 #line 246 "cool.flex"
 {
 				cool_yylval.error_msg = "Unmatched *)";
-				BEGIN(0);
 				return ERROR;
 			}
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 253 "cool.flex"
+#line 252 "cool.flex"
 {
 				BEGIN(stringconst);
 				STRING_BUF_IDX = 0;
@@ -1468,7 +1467,7 @@ YY_RULE_SETUP
 case 53:
 /* rule 53 can match eol */
 YY_RULE_SETUP
-#line 259 "cool.flex"
+#line 258 "cool.flex"
 {
                                 if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) )
                                 {
@@ -1484,7 +1483,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 272 "cool.flex"
+#line 271 "cool.flex"
 {
                           	// escaped backslashes
 			        if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) )
@@ -1500,7 +1499,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 286 "cool.flex"
+#line 285 "cool.flex"
 {
 				if (STRING_BUF_IDX+1 > (MAX_STR_CONST-1) ) 
 				{
@@ -1515,14 +1514,14 @@ YY_RULE_SETUP
 case 56:
 /* rule 56 can match eol */
 YY_RULE_SETUP
-#line 299 "cool.flex"
+#line 298 "cool.flex"
 {
 				BEGIN(recoverystringerror);
 			}
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 303 "cool.flex"
+#line 302 "cool.flex"
 {
 				BEGIN(0);
 				if( STRING_BUF_IDX > 0)
@@ -1532,7 +1531,7 @@ YY_RULE_SETUP
 			}
 	YY_BREAK
 case YY_STATE_EOF(stringconst):
-#line 311 "cool.flex"
+#line 310 "cool.flex"
 {
 				cool_yylval.error_msg = "EOF in string constant";
 				yyterminate();
@@ -1542,7 +1541,7 @@ case YY_STATE_EOF(stringconst):
 case 58:
 /* rule 58 can match eol */
 YY_RULE_SETUP
-#line 317 "cool.flex"
+#line 316 "cool.flex"
 {
 				cool_yylval.error_msg = "Unterminated string constant";
 				BEGIN(0);
@@ -1551,11 +1550,11 @@ YY_RULE_SETUP
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 323 "cool.flex"
+#line 322 "cool.flex"
 
 	YY_BREAK
 case YY_STATE_EOF(multilinecomment):
-#line 325 "cool.flex"
+#line 324 "cool.flex"
 {
 					cool_yylval.error_msg = "EOF in comment";
 					yyterminate();
@@ -1564,7 +1563,7 @@ case YY_STATE_EOF(multilinecomment):
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 331 "cool.flex"
+#line 330 "cool.flex"
 {
 				cool_yylval.error_msg = "String contains null character";
 				BEGIN(recoverystringerror);
@@ -1576,7 +1575,7 @@ YY_RULE_SETUP
   */
 case 61:
 YY_RULE_SETUP
-#line 341 "cool.flex"
+#line 340 "cool.flex"
 { return (DARROW); }
 	YY_BREAK
 /*
@@ -1591,10 +1590,10 @@ YY_RULE_SETUP
   */
 case 62:
 YY_RULE_SETUP
-#line 357 "cool.flex"
+#line 356 "cool.flex"
 ECHO;
 	YY_BREAK
-#line 1598 "cool-lex.cc"
+#line 1597 "cool-lex.cc"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(recoverystringerror):
 	yyterminate();
@@ -2742,7 +2741,7 @@ void yyfree (void * ptr )
 
 /* %ok-for-header */
 
-#line 357 "cool.flex"
+#line 356 "cool.flex"
 
 
 
