@@ -90,7 +90,7 @@ END_ML_COMMENT \*\)
 
 SL_COMMENT_KYWRD \-\-
 
-INVALID_CHARS .
+INVALID_CHARS .|\n
 
 %%
 
@@ -373,7 +373,7 @@ for (i = 0; i < strlen(buf)-1; i++){
 			buf[i-offset] = 0x08;
 			offset++;
 			i++;
-      			last_char_replaced = verify_last_char_replaced(i,buf);
+      last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == 'f' ){
 			buf[i-offset] = 0x0C;
 			offset++;

@@ -1571,6 +1571,7 @@ YY_RULE_SETUP
 			}
 	YY_BREAK
 case 61:
+/* rule 61 can match eol */
 YY_RULE_SETUP
 #line 337 "cool.flex"
 { 
@@ -1591,7 +1592,7 @@ YY_RULE_SETUP
 #line 348 "cool.flex"
 ECHO;
 	YY_BREAK
-#line 1595 "cool-lex.cc"
+#line 1596 "cool-lex.cc"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(recoverystringerror):
 	yyterminate();
@@ -2769,7 +2770,7 @@ for (i = 0; i < strlen(buf)-1; i++){
 			buf[i-offset] = 0x08;
 			offset++;
 			i++;
-      			last_char_replaced = verify_last_char_replaced(i,buf);
+      last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == 'f' ){
 			buf[i-offset] = 0x0C;
 			offset++;
