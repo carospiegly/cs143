@@ -90,6 +90,7 @@ END_ML_COMMENT \*\)
 
 SL_COMMENT_KYWRD \-\-
 
+INVALID_CHARS .
 
 %%
 
@@ -248,7 +249,6 @@ SL_COMMENT_KYWRD \-\-
 				return ERROR;
 			}
 
-
 \"			{
 				BEGIN(stringconst);
 				STRING_BUF_IDX = 0;
@@ -334,23 +334,15 @@ SL_COMMENT_KYWRD \-\-
 			}
 
 
+ {INVALID_CHARS}  { 
+  cool_yylval.error_msg = yytext;
+  return ERROR;
+  }
+
  /*
   *  The multiple-character operators.
   */
 {DARROW}		{ return (DARROW); }
-
- /*
-  * Keywords are case-insensitive except for the values true and false,
-  * which must begin with a lower-case letter.
-  */
-
-
- /*
-  *  String constants (C syntax)
-  *  Escape sequence \c is accepted for all characters c. Except for 
-  *  \n \t \b \f, the result is c.
-  *
-  */
 
 
 %%
