@@ -294,7 +294,6 @@ INVALID_CHARS .|\n
 			}
 	
 
-
 <stringconst>\n		{
 				cool_yylval.error_msg = "Unterminated string constant";
 				BEGIN(0);
@@ -376,8 +375,128 @@ for (i = 0; i < strlen(buf)-1; i++){
 			offset++;
 			i++;
 			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'a' ){
+			buf[i-offset] = 'a';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'c' ){
+			buf[i-offset] = 'c';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'd' ){
+			buf[i-offset] = 'd';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'e' ){
+			buf[i-offset] = 'e';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'g' ){
+			buf[i-offset] = 'g';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'h' ){
+			buf[i-offset] = 'h';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'i' ){
+			buf[i-offset] = 'i';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'j' ){
+			buf[i-offset] = 'j';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'k' ){
+			buf[i-offset] = 'k';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'l' ){
+			buf[i-offset] = 'l';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'm' ){
+			buf[i-offset] = 'm';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'o' ){
+			buf[i-offset] = 'o';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'p' ){
+			buf[i-offset] = 'p';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'q' ){
+			buf[i-offset] = 'q';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'r' ){
+			buf[i-offset] = 'r';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 's' ){
+			buf[i-offset] = 's';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'u' ){
+			buf[i-offset] = 'u';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'v' ){
+			buf[i-offset] = 'v';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'w' ){
+			buf[i-offset] = 'w';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'x' ){
+			buf[i-offset] = 'x';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'y' ){
+			buf[i-offset] = 'y';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == 'z' ){
+			buf[i-offset] = 'z';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
 		}else if ( buf[i+1] == '0' ){
 			buf[i-offset] = '0';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == '\\' ){
+			buf[i-offset] = '\\';
+			offset++;
+			i++;
+			last_char_replaced = verify_last_char_replaced(i,buf);
+		}else if ( buf[i+1] == '"' ){
+			buf[i-offset] = '"';
 			offset++;
 			i++;
 			last_char_replaced = verify_last_char_replaced(i,buf);
