@@ -90,7 +90,7 @@ END_ML_COMMENT \*\)
 
 SL_COMMENT_KYWRD \-\-
 
-INVALID_CHARS .
+INVALID_CHARS .|\n
 
 %%
 
@@ -264,7 +264,7 @@ INVALID_CHARS .
                                 string_buf[STRING_BUF_IDX] = yytext[0];
 				string_buf[STRING_BUF_IDX+1] = yytext[1];
                        		string_buf[STRING_BUF_IDX+2] = '\0';
-				STRING_BUF_IDX++;
+				STRING_BUF_IDX += 2;
 				++curr_lineno;
 			 }	
 
@@ -296,7 +296,9 @@ INVALID_CHARS .
 
 
 <stringconst>\n		{
-				BEGIN(recoverystringerror);
+				cool_yylval.error_msg = "Unterminated string constant";
+				BEGIN(0);
+				return ERROR;
 			}
 
 <stringconst>\"		{
@@ -309,21 +311,16 @@ INVALID_CHARS .
 
 <stringconst><<EOF>>	{
 				cool_yylval.error_msg = "EOF in string constant";
-				yyterminate();
+				BEGIN(0);
 				return ERROR;
 			}
 
-<recoverystringerror>\n	{
-				cool_yylval.error_msg = "Unterminated string constant";
-				BEGIN(0);
-        return ERROR;		
-			}
 
 <recoverystringerror>.		
 
 <multilinecomment><<EOF>>	{
 					cool_yylval.error_msg = "EOF in comment";
-					yyterminate();
+					BEGIN(0);
 					return ERROR;
 				}
 
