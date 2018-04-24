@@ -133,14 +133,17 @@
     %type <program> program
     %type <classes> class_list
     %type <class_> class
-    
-    /* You will want to change the following line. */
-    %type <features> dummy_feature_list
+    %type <features> feature_list
+    %type <feature> feature
+    %type <formals> formal_list
+    %type <formal> formal
+    %type <expressions> expr_list
+    %type <expression> expr
     
     /* Precedence declarations go here. */
     
-    
     %%
+
     /* 
     Save the root of the abstract syntax tree in a global variable.
     */
@@ -157,17 +160,33 @@
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
-    class	: CLASS TYPEID '{' dummy_feature_list '}' ';'
+    class	: CLASS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,idtable.add_string("Object"),$4,
     stringtable.add_string(curr_filename)); }
-    | CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
+    | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
     ;
     
+
     /* Feature list may be empty, but no empty features in list. */
-    dummy_feature_list:		/* empty */
+    feature_list:		/* empty */
     {  $$ = nil_Features(); }
+    | feature /* single feature */
+    { $$ = single_Features($1); } 
+    | feature_list feature /* several features */
+    { $$ = append_Features($1, single_Features($2));}
+
+    feature: OBJECTID ':' TYPEID ';'
+    {$$ = attr($1, $3, void);} /* TODO: Add checks for int, bool, and string initialization, do we need to add void to any tables? */
+    | OBJECTID ':' TYPEID ASSIGN expr ';' /*TODO ask about init expression [] brackets */
+    {$$ = attr($1, $3, $5);}
+    | OBJECTID '(' formal_list ')' ':'TYPEID '{' expr '}' ';' 
+    {$$ = method($1, $3, $6, $8);}
+
     
+    
+
+
     
     /* end of grammar */
     %%
