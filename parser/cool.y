@@ -139,7 +139,8 @@
     %type <formal> formal
     %type <expressions> expr_list
     %type <expression> expr
-    
+    %type <case_> case
+    %type <cases> case_list
     /* Precedence declarations go here. */
     
     %%
@@ -180,14 +181,56 @@
     {$$ = attr($1, $3, void);} /* TODO: Add checks for int, bool, and string initialization, do we need to add void to any tables? */
     | OBJECTID ':' TYPEID ASSIGN expr ';' /*TODO ask about init expression [] brackets */
     {$$ = attr($1, $3, $5);}
-    | OBJECTID '(' formal_list ')' ':'TYPEID '{' expr '}' ';' 
+    | OBJECTID '(' formal_list ')' ':'TYPEID '{' expr '}' ';'
     {$$ = method($1, $3, $6, $8);}
 
-    
+    formal_list: /* empty */
+    {  $$ = nil_Formals(); }
+    | formal /* single formal */
+    { $$ = single_Formals($1); } 
+    | formal_list formal /* several formals */
+    { $$ = append_Formals($1, single_Formals($2));}
+
+    formal: OBJECTID ':' TYPEID
+    {$$ = formal($1, $3);}
+
+    expr_list: /* empty */
+    {  $$ = nil_Expressions(); }
+    | expr /* single expression */
+    { $$ = single_Expressions($1); } 
+    | expr_list expr /* several formals */
+    { $$ = append_Expressions($1, single_Expressions($2));}
     
 
+    case_list: case 
+    { $$ = single_Cases($1); } 
+    | case_list case 
+    { $$ = append_Cases($1, single_Cases($2));}
 
-    
+
+    expr: OBJECTID ASSIGN expr
+    { $$ = assign($1, $3); }
+    | expr '.' OBJECTID '(' expr_list ')' 
+    { $$ = dispatch($1, $3, $5); }
+    | OBJECTID '(' expr_list ')' 
+    { $$ = dispatch(idtable.add_string("self"), $1, $3);}
+    | expr '@' TYPEID '.' OBJECTID '(' expr_list ')' 
+    { $$ = static_dispatch($1, $3, $5, $7);}
+    | IF expr THEN expr ELSE expr FI
+    { $$ = cond($2, $4, $6);}
+    | WHILE expr LOOP expr POOL
+    { $$ = loop($2, $4);}
+    | '{' expr_list '}'
+    { $$ = block($2);}
+    | LET OBJECTID TYPEID ASSIGN ',' OBJECTID ':' TYPEID IN expr
+    { $$ = let($ )}
+    | 
+    | NEW TYPEID
+    { $$ = new_($2);}
+    | ISVOID expr
+    { $$ = isvoid($2);}
+
+
     /* end of grammar */
     %%
     
