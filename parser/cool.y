@@ -141,6 +141,7 @@
     %type <expression> expr
     %type <case_> case
     %type <cases> case_list
+    %type <expression> let_chunk_list
 
     /* Precedence declarations go here. */
     %right ASSIGN
@@ -188,7 +189,7 @@
     { $$ = append_Features($1, single_Features($2));}
 
     feature: OBJECTID ':' TYPEID ';'
-    {$$ = attr($1, $3, void);} /* TODO: Add checks for int, bool, and string initialization, do we need to add void to any tables? */
+    {$$ = attr($1, $3, no_expr());}
     | OBJECTID ':' TYPEID ASSIGN expr ';' /*TODO ask about init expression [] brackets */
     {$$ = attr($1, $3, $5);}
     | OBJECTID '(' formal_list ')' ':'TYPEID '{' expr '}' ';'
@@ -204,23 +205,39 @@
     formal: OBJECTID ':' TYPEID
     {$$ = formal($1, $3);}
 
-    expr_list: /* empty */
+    comma_expr_list: /* empty */
     {  $$ = nil_Expressions(); }
     | expr /* single expression */
     { $$ = single_Expressions($1); } 
-    | expr_list expr /* several formals */
+    | expr_list',' expr 
     { $$ = append_Expressions($1, single_Expressions($2));}
-    
 
-    case_list: case 
+
+    semicolon_expr_list: /* empty */
+    {  $$ = nil_Expressions(); }
+    | expr /* single expression */
+    { $$ = single_Expressions($1); } 
+    | expr_list ';' expr 
+    { $$ = append_Expressions($1, single_Expressions($2));}
+
+
+    case_list: branch 
     { $$ = single_Cases($1); } 
-    | case_list case 
+    | case_list  branch
     { $$ = append_Cases($1, single_Cases($2));}
 
+    branch: OBJECTID ':' TYPEID DARROW expr ';'
+    { branch( $1, $3, $5); }
+
+    /*
+    let_chunk: OBJECTID ':' TYPEID 
+    | OBJECTID ':' TYPEID ASSIGN expr
+
+   
 
     expr: OBJECTID ASSIGN expr
     { $$ = assign($1, $3); }
-    | expr '.' OBJECTID '(' expr_list ')' 
+    | expr '.' OBJECTID '(' comma_expr_list ')' 
     { $$ = dispatch($1, $3, $5); }
     | OBJECTID '(' expr_list ')' 
     { $$ = dispatch(idtable.add_string("self"), $1, $3);}
@@ -230,15 +247,62 @@
     { $$ = cond($2, $4, $6);}
     | WHILE expr LOOP expr POOL
     { $$ = loop($2, $4);}
-    | '{' expr_list '}'
+
+    /* TODO CHECK BLOCK CODE WITH TA */
+    | '{' semicolon_expr_list '}'
     { $$ = block($2);}
-    | LET OBJECTID TYPEID ASSIGN ',' OBJECTID ':' TYPEID IN expr
-    { $$ = let($ )}
-    | 
+
+
+    
+    | LET let_chunk IN expr
+    { $$ let () }
+    | LET let_chunk_list IN expr
+    { $$ = let( )}
+  
+
+
+    /* TODO CASE */
+    | CASE expr OF case_list ESAC
+    { typcase( $2, $4 );}
+
+
+
+
     | NEW TYPEID
     { $$ = new_($2);}
     | ISVOID expr
     { $$ = isvoid($2);}
+    | expr '+' expr
+    { $$ = plus($1 , $3);}
+    | expr '-' expr
+    { $$ = sub($1, $3);}
+    | expr '*' expr
+    { $$ = mul($1, $3);}
+    | expr '/' expr
+    { $$ = divide($1, $3);}
+    | '~' expr 
+    { $$ = neg($2);}
+    | expr '<' expr
+    { $$ = lt($1, $3);}
+    | expr LE expr
+    { $$ = leq($1, $3);}
+    | expr '=' expr
+    { $$ = eq($1 , $3);}
+    | NOT expr
+    { $$ = comp($2);}
+    | '(' expr ')'
+    { $$ = $2;}
+    | OBJECTID
+    { $$ = object($1);}
+    | INT_CONST
+    { $$ = int_const($1);
+    | STR_CONST
+    { $$ = string_const($1);} 
+    | TRUE 
+    { $$ = bool_const(true);}
+    | FALSE
+    { $$ = bool_const (false);}
+
 
 
     /* end of grammar */
