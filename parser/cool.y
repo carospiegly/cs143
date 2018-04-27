@@ -141,7 +141,17 @@
     %type <expression> expr
     %type <case_> case
     %type <cases> case_list
+
     /* Precedence declarations go here. */
+    %right ASSIGN
+    %precedence NOT
+    %nonassoc '<' '=' LE 
+    %left '+' '-'
+    %left '*' '/'
+    %precedence ISVOID
+    %precedence '~'
+    %precedence '@'
+    %precedence '.'
     
     %%
 
