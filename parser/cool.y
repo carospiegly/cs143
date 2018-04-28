@@ -145,6 +145,7 @@
     %type <expression> let_chunk_list
 
     /* Precedence declarations go here. */
+    %right IN
     %right ASSIGN
     %precedence NOT
     %nonassoc '<' '=' LE 
