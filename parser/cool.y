@@ -137,9 +137,10 @@
     %type <feature> feature
     %type <formals> formal_list
     %type <formal> formal
-    %type <expressions> expr_list
+    %type <expressions> comma_expr_list
+    %type <expressions> semicolon_expr_list
     %type <expression> expr
-    %type <case_> case
+    %type <case_> branch
     %type <cases> case_list
     %type <expression> let_chunk_list
 
@@ -199,8 +200,8 @@
     {  $$ = nil_Formals(); }
     | formal /* single formal */
     { $$ = single_Formals($1); } 
-    | formal_list formal /* several formals */
-    { $$ = append_Formals($1, single_Formals($2));}
+    | formal_list ',' formal /* several formals */
+    { $$ = append_Formals($1, single_Formals($3));}
 
     formal: OBJECTID ':' TYPEID
     {$$ = formal($1, $3);}
@@ -209,39 +210,47 @@
     {  $$ = nil_Expressions(); }
     | expr /* single expression */
     { $$ = single_Expressions($1); } 
-    | expr_list',' expr 
-    { $$ = append_Expressions($1, single_Expressions($2));}
+    | comma_expr_list',' expr 
+    { $$ = append_Expressions($1, single_Expressions($3));}
 
 
     semicolon_expr_list: /* empty */
     {  $$ = nil_Expressions(); }
     | expr /* single expression */
     { $$ = single_Expressions($1); } 
-    | expr_list ';' expr 
-    { $$ = append_Expressions($1, single_Expressions($2));}
-
-
-    case_list: branch 
-    { $$ = single_Cases($1); } 
-    | case_list  branch
-    { $$ = append_Cases($1, single_Cases($2));}
+    | semicolon_expr_list ';' expr 
+    { $$ = append_Expressions($1, single_Expressions($3));}
 
     branch: OBJECTID ':' TYPEID DARROW expr ';'
     { branch( $1, $3, $5); }
+    
+    case_list: branch 
+    { $$ = single_Cases($1); } 
+    | case_list ';' branch
+    { $$ = append_Cases($1, single_Cases($3));}
 
-    /*
-    let_chunk: OBJECTID ':' TYPEID 
-    | OBJECTID ':' TYPEID ASSIGN expr
+    
 
-   
+    
+
+    let_chunk_list: OBJECTID ':' TYPEID let_chunk_list
+    { let($1, $3, no_expr(), $4);}
+    | OBJECTID ':' TYPEID ASSIGN expr let_chunk_list
+    { let($1, $3, $5, $6);}
+    | OBJECTID ':' TYPEID IN expr
+    { let($1, $3, no_expr(), $5);}
+    | OBJECTID ':' TYPEID ASSIGN expr IN expr
+    { let($1, $3, $5, $7);}
+
+    
 
     expr: OBJECTID ASSIGN expr
     { $$ = assign($1, $3); }
     | expr '.' OBJECTID '(' comma_expr_list ')' 
     { $$ = dispatch($1, $3, $5); }
-    | OBJECTID '(' expr_list ')' 
-    { $$ = dispatch(idtable.add_string("self"), $1, $3);}
-    | expr '@' TYPEID '.' OBJECTID '(' expr_list ')' 
+    | OBJECTID '(' comma_expr_list ')' 
+    { $$ = dispatch(object(idtable.add_string("self")), $1, $3);}
+    | expr '@' TYPEID '.' OBJECTID '(' comma_expr_list ')' 
     { $$ = static_dispatch($1, $3, $5, $7);}
     | IF expr THEN expr ELSE expr FI
     { $$ = cond($2, $4, $6);}
@@ -254,10 +263,15 @@
 
 
     
-    | LET let_chunk IN expr
-    { $$ let () }
-    | LET let_chunk_list IN expr
-    { $$ = let( )}
+    | LET OBJECTID ':' TYPEID let_chunk_list
+    { $$ = let ($2, $4, no_expr(), $5); }
+    | LET OBJECTID ':' TYPEID IN expr
+    { $$ = let($2, $4, no_expr(), $6);}
+
+    | LET OBJECTID ':' TYPEID ASSIGN expr let_chunk_list
+    { $$ = let ($2, $4, $6, $7); }
+    | LET OBJECTID ':' TYPEID ASSIGN expr IN expr
+    { $$ = let($2, $4, $6, $8);}
   
 
 
@@ -295,13 +309,12 @@
     | OBJECTID
     { $$ = object($1);}
     | INT_CONST
-    { $$ = int_const($1);
+    { $$ = int_const($1);}
     | STR_CONST
     { $$ = string_const($1);} 
-    | TRUE 
-    { $$ = bool_const(true);}
-    | FALSE
-    { $$ = bool_const (false);}
+    | BOOL_CONST 
+    { $$ = bool_const($1);}
+  
 
 
 
