@@ -165,32 +165,31 @@
     ;
     
     class_list
-    : class ';'     /* single class */
+    : class     /* single class */
     { $$ = single_Classes($1);
     parse_results = $$; }
-    | class_list ';' class  /* several classes */
-    { $$ = append_Classes($1,single_Classes($3)); 
+    | class_list class  /* several classes */
+    { $$ = append_Classes($1,single_Classes($2)); 
     parse_results = $$; }
-    |
-    {  $$ = nil_Classes();
-        parse_results = $$;}
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
-    class : CLASS TYPEID '{' feature_list '}'
+    class : CLASS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,idtable.add_string("Object"),$4,
     stringtable.add_string(curr_filename)); }
-    | CLASS TYPEID INHERITS TYPEID '{' feature_list '}'
+    | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
-    | error 
-    {  yyerrok; }
+    
+    | error ';'
+    { $$ = class_(idtable.add_string(""), idtable.add_string(""), nil_Features(), idtable.add_string(""));
+    yyerrok; }
     ;
     
 
     /* Feature list may be empty, but no empty features in list. */
     feature_list:   /* empty */
     {  $$ = nil_Features(); }
-    | feature ';' /* single feature */
+    | feature /* single feature */
     { $$ = single_Features($1); } 
     | feature_list ';' feature /* several features */
     { $$ = append_Features($1, single_Features($3));}
