@@ -134,6 +134,7 @@
     %type <classes> class_list
     %type <class_> class
     %type <features> feature_list
+    %type <features> empty_feature_list
     %type <feature> feature
     %type <formals> formal_list
     %type <formal> formal
@@ -185,22 +186,37 @@
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
-    class : CLASS TYPEID '{' feature_list '}' ';'
+    class : 
+    CLASS TYPEID '{' empty_feature_list '}' ';'
+    { $$ = class_($2,idtable.add_string("Object"), $4,
+    stringtable.add_string(curr_filename)); }
+
+
+
+    | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
+    { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+
+
+    | CLASS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,idtable.add_string("Object"),$4,
     stringtable.add_string(curr_filename)); }
-    | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
+
+
+
+    | CLASS TYPEID INHERITS TYPEID '{' empty_feature_list '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
     ;
     
 
     /* Feature list may be empty, but no empty features in list. */
-    feature_list:   /* empty */
-    {  $$ = nil_Features(); }
-    | feature /* single feature */
+    feature_list: feature /* single feature */
     { $$ = single_Features($1); } 
     | feature_list feature /* several features */
     { $$ = append_Features($1, single_Features($2));}
     ;
+
+    empty_feature_list:
+    { nil_Features(); }
 
     feature: OBJECTID ':' TYPEID ';'
     {$$ = attr($1, $3, no_expr());}
