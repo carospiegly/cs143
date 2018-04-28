@@ -210,28 +210,28 @@
 
     /* Feature list may be empty, but no empty features in list. */
     feature_list: feature /* single feature */
-    { $$ = single_Features($1); } 
+    { printf("1 in feature list\n"); $$ = single_Features($1); } 
     | feature_list feature /* several features */
-    { $$ = append_Features($1, single_Features($2));}
+    { printf("multiple in feature list\n"); $$ = append_Features($1, single_Features($2));}
     ;
 
     empty_feature_list:
-    { nil_Features(); }
+    { printf("empty feature list\n"); nil_Features(); }
 
     feature: OBJECTID ':' TYPEID ';'
-    {$$ = attr($1, $3, no_expr());}
+    { printf("vanilla feature\n"); $$ = attr($1, $3, no_expr());}
     | OBJECTID ':' TYPEID ASSIGN expr ';'
-    {$$ = attr($1, $3, $5);}
+    { printf("FEATURE iwth NO formal list\n"); $$ = attr($1, $3, $5);}
     | OBJECTID '(' formal_list ')' ':'TYPEID '{' expr '}' ';'
-    {$$ = method($1, $3, $6, $8);}
+    { printf("FEATURE iwth formal list\n"); $$ = method($1, $3, $6, $8);}
     ;
 
     formal_list: /* empty */
-    {  $$ = nil_Formals(); }
+    { printf("empty formal list\n"); $$ = nil_Formals(); }
     | formal /* single formal */
-    { $$ = single_Formals($1); } 
+    { printf("formal list with 1 thing\n"); $$ = single_Formals($1); } 
     | formal_list ',' formal /* several formals */
-    { $$ = append_Formals($1, single_Formals($3));}
+    { printf("formal list with multiple things\n"); $$ = append_Formals($1, single_Formals($3));}
     ;
 
     formal: OBJECTID ':' TYPEID
@@ -277,7 +277,7 @@
     
 
     expr: OBJECTID ASSIGN expr
-    { $$ = assign($1, $3); }
+    { printf("in vanilla assign expr"); $$ = assign($1, $3); }
     | expr '.' OBJECTID '(' comma_expr_list ')' 
     { $$ = dispatch($1, $3, $5); }
     | OBJECTID '(' comma_expr_list ')' 
