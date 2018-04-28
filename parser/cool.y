@@ -125,7 +125,7 @@
     /*  DON'T CHANGE ANYTHING ABOVE THIS LINE, OR YOUR PARSER WONT WORK       */
     /**************************************************************************/
     
-    /* Complete the nonterminal list below, giving a type for the semantic
+   /* Complete the nonterminal list below, giving a type for the semantic
     value of each non terminal. (See section 3.6 in the bison 
     documentation for details). */
     
@@ -160,41 +160,47 @@
     /* 
     Save the root of the abstract syntax tree in a global variable.
     */
-    program	: class_list	{ @$ = @1; ast_root = program($1); }
+    program : class_list  { @$ = @1; ast_root = program($1); }
     ;
     
     class_list
-    : class			/* single class */
+    : class     /* single class */
     { $$ = single_Classes($1);
     parse_results = $$; }
-    | class_list class	/* several classes */
+    | class_list class  /* several classes */
     { $$ = append_Classes($1,single_Classes($2)); 
     parse_results = $$; }
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
-    class	: CLASS TYPEID '{' feature_list '}' ';'
+    class : CLASS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,idtable.add_string("Object"),$4,
     stringtable.add_string(curr_filename)); }
     | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+    
+    | error ';'
+    { $$ = class_(idtable.add_string(""), idtable.add_string(""), nil_Features(), idtable.add_string(""));
+    yyerrok; }
     ;
     
 
     /* Feature list may be empty, but no empty features in list. */
-    feature_list:		/* empty */
+    feature_list:   /* empty */
     {  $$ = nil_Features(); }
     | feature /* single feature */
     { $$ = single_Features($1); } 
-    | feature_list feature /* several features */
-    { $$ = append_Features($1, single_Features($2));}
+    | feature_list ';' feature /* several features */
+    { $$ = append_Features($1, single_Features($3));}
+    ;
 
-    feature: OBJECTID ':' TYPEID ';'
+    feature: OBJECTID ':' TYPEID 
     {$$ = attr($1, $3, no_expr());}
-    | OBJECTID ':' TYPEID ASSIGN expr ';' /*TODO ask about init expression [] brackets */
+    | OBJECTID ':' TYPEID ASSIGN expr 
     {$$ = attr($1, $3, $5);}
-    | OBJECTID '(' formal_list ')' ':'TYPEID '{' expr '}' ';'
+    | OBJECTID '(' formal_list ')' ':'TYPEID '{' expr '}'
     {$$ = method($1, $3, $6, $8);}
+    ;
 
     formal_list: /* empty */
     {  $$ = nil_Formals(); }
@@ -202,17 +208,19 @@
     { $$ = single_Formals($1); } 
     | formal_list ',' formal /* several formals */
     { $$ = append_Formals($1, single_Formals($3));}
+    ;
 
     formal: OBJECTID ':' TYPEID
     {$$ = formal($1, $3);}
+    ;
 
     comma_expr_list: /* empty */
     {  $$ = nil_Expressions(); }
     | expr /* single expression */
     { $$ = single_Expressions($1); } 
-    | comma_expr_list',' expr 
+    | comma_expr_list ',' expr 
     { $$ = append_Expressions($1, single_Expressions($3));}
-
+    ;
 
     semicolon_expr_list: /* empty */
     {  $$ = nil_Expressions(); }
@@ -220,17 +228,17 @@
     { $$ = single_Expressions($1); } 
     | semicolon_expr_list ';' expr 
     { $$ = append_Expressions($1, single_Expressions($3));}
-
+    ;
+   
     branch: OBJECTID ':' TYPEID DARROW expr ';'
     { branch( $1, $3, $5); }
-    
+    ;
     case_list: branch 
     { $$ = single_Cases($1); } 
     | case_list ';' branch
     { $$ = append_Cases($1, single_Cases($3));}
-
+    ;
     
-
     
 
     let_chunk_list: OBJECTID ':' TYPEID let_chunk_list
@@ -241,7 +249,7 @@
     { let($1, $3, no_expr(), $5);}
     | OBJECTID ':' TYPEID ASSIGN expr IN expr
     { let($1, $3, $5, $7);}
-
+    ;
     
 
     expr: OBJECTID ASSIGN expr
@@ -262,7 +270,6 @@
     { $$ = block($2);}
 
 
-    
     | LET OBJECTID ':' TYPEID let_chunk_list
     { $$ = let ($2, $4, no_expr(), $5); }
     | LET OBJECTID ':' TYPEID IN expr
@@ -314,7 +321,7 @@
     { $$ = string_const($1);} 
     | BOOL_CONST 
     { $$ = bool_const($1);}
-  
+    ;
 
 
 
