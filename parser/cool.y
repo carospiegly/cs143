@@ -172,39 +172,46 @@
     class_list
     : error ';'
     {
-    $$ = nil_Classes();
-        parse_results = $$;}
+    	$$ = nil_Classes();
+        printf("class list with no classes\n");
+	parse_results = $$;}
     |
     class    /* single class */
-    { $$ = single_Classes($1);
-    parse_results = $$; }
+    { 	printf("class list, with 1 class\n"); 
+	$$ = single_Classes($1);
+    	parse_results = $$; }
     | class_list class  /* several classes */
-    { $$ = append_Classes($1,single_Classes($2)); 
-    parse_results = $$; }
+    { 	printf("class list with multiple classes, recurses\n"); 
+	$$ = append_Classes($1,single_Classes($2)); 
+    	parse_results = $$; }
     | class_list class error ';'   /* several classes */
-    { yyerrok; }
+    { printf(" class list class ERROR; \n"); yyerrok; }
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
     class : 
     CLASS TYPEID '{' empty_feature_list '}' ';'
-    { $$ = class_($2,idtable.add_string("Object"), $4,
-    stringtable.add_string(curr_filename)); }
+    { 	printf("CLASS TYPEID { empty feature list }\n"); 
+	$$ = class_($2,idtable.add_string("Object"), $4,
+    	stringtable.add_string(curr_filename)); }
 
 
 
     | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
-    { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+    { 	printf("CLASS TYPEID INHERITS TYPEID { feature list };\n"); 
+	$$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
 
 
     | CLASS TYPEID '{' feature_list '}' ';'
-    { $$ = class_($2,idtable.add_string("Object"),$4,
-    stringtable.add_string(curr_filename)); }
+    { 	printf("CLASS TYPEID { feature list }; \n"); 
+	$$ = class_($2,idtable.add_string("Object"),$4,
+    	stringtable.add_string(curr_filename)); }
 
 
 
     | CLASS TYPEID INHERITS TYPEID '{' empty_feature_list '}' ';'
-    { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+    { 	printf("CLASS TYPEID INHERITS TYPEID { empty feature list };\n"); 
+	$$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
     ;
     
 
