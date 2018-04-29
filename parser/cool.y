@@ -272,8 +272,8 @@
     ;
     case_list: branch 
     { printf(" case list with 1 case\n"); $$ = single_Cases($1); } 
-    | case_list ';' branch
-    { printf(" case list with multiple cases\n"); $$ = append_Cases($1, single_Cases($3));}
+    | case_list branch
+    { printf(" case list with multiple cases\n"); $$ = append_Cases($1, single_Cases($2));}
     ;
     
     
