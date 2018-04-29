@@ -235,116 +235,116 @@
     ;
 
     formal: OBJECTID ':' TYPEID
-    {$$ = formal($1, $3);}
+    { printf("formal, OBJID : TYPEID\n"); $$ = formal($1, $3);}
     ;
 
     comma_expr_list: /* empty */
-    {  $$ = nil_Expressions(); }
+    { printf("comma expr list, with 0 exprs \n"); $$ = nil_Expressions(); }
     | expr /* single expression */
-    { $$ = single_Expressions($1); } 
+    { printf("comma expr list, that is 1 expr \n"); $$ = single_Expressions($1); } 
     | comma_expr_list ',' expr 
-    { $$ = append_Expressions($1, single_Expressions($3));}
+    { printf("comma expr list, expr \n"); $$ = append_Expressions($1, single_Expressions($3));}
     ;
 
     semicolon_expr_list: /* empty */
-    {  $$ = nil_Expressions(); }
+    { printf("semicolon expr list, with no expressions inside\n"); $$ = nil_Expressions(); }
     | expr /* single expression */
-    { $$ = single_Expressions($1); } 
+    { printf("semicolon expr list,  1 expr\n"); $$ = single_Expressions($1); } 
     | semicolon_expr_list ';' expr 
-    { $$ = append_Expressions($1, single_Expressions($3));}
+    { printf(" semicolon expr list; expr \n"); $$ = append_Expressions($1, single_Expressions($3));}
     ;
    
     branch: OBJECTID ':' TYPEID DARROW expr ';'
-    { branch( $1, $3, $5); }
+    { printf("OBJ : TYPEID >= expr ; \n"); branch( $1, $3, $5); }
     ;
     case_list: branch 
-    { $$ = single_Cases($1); } 
+    { printf(" case list with 1 case\n"); $$ = single_Cases($1); } 
     | case_list ';' branch
-    { $$ = append_Cases($1, single_Cases($3));}
+    { printf(" case list with multiple cases\n"); $$ = append_Cases($1, single_Cases($3));}
     ;
     
     
 
     let_chunk_list: OBJECTID ':' TYPEID let_chunk_list
-    { let($1, $3, no_expr(), $4);}
+    { printf(" let chunk list with right recursion, OBJID : TYPEID lcl \n"); let($1, $3, no_expr(), $4);}
     | OBJECTID ':' TYPEID ASSIGN expr let_chunk_list
-    { let($1, $3, $5, $6);}
+    { printf(" let chunk list with right recursion, OBJID : TYPEID <- expr lcl \n"); let($1, $3, $5, $6);}
     | OBJECTID ':' TYPEID IN expr
-    { let($1, $3, no_expr(), $5);}
+    { printf("OBJID : TYPEID in expr \n"); let($1, $3, no_expr(), $5);}
     | OBJECTID ':' TYPEID ASSIGN expr IN expr
-    { let($1, $3, $5, $7);}
+    { printf("OBJID : TYPEID <- expr in expr \n"); let($1, $3, $5, $7);}
     ;
     
 
     expr: OBJECTID ASSIGN expr
-    { printf("in vanilla assign expr"); $$ = assign($1, $3); }
+    { printf("in vanilla,  OBJECTID <- expr\n"); $$ = assign($1, $3); }
     | expr '.' OBJECTID '(' comma_expr_list ')' 
-    { $$ = dispatch($1, $3, $5); }
+    { printf("dispath, expr.OBJECTID ( comma expr list )\n"); $$ = dispatch($1, $3, $5); }
     | OBJECTID '(' comma_expr_list ')' 
-    { $$ = dispatch(object(idtable.add_string("self")), $1, $3);}
+    { printf("self dispatch, OBJECTID ( comma expr list )\n"); $$ = dispatch(object(idtable.add_string("self")), $1, $3);}
     | expr '@' TYPEID '.' OBJECTID '(' comma_expr_list ')' 
-    { $$ = static_dispatch($1, $3, $5, $7);}
+    { printf("static dispatch expr @ TYPEID.OBJECTID ( comma expr list) \n"); $$ = static_dispatch($1, $3, $5, $7);}
     | IF expr THEN expr ELSE expr FI
-    { $$ = cond($2, $4, $6);}
+    { printf("IF expr THEN expr ELSE expr FI \n"); $$ = cond($2, $4, $6);}
     | WHILE expr LOOP expr POOL
-    { $$ = loop($2, $4);}
+    { printf("WHILE expr LOOP expr POOL\n"); $$ = loop($2, $4);}
 
     /* TODO CHECK BLOCK CODE WITH TA */
     | '{' semicolon_expr_list '}'
-    { $$ = block($2);}
+    { printf("{ semicolon expr list } \n"); $$ = block($2);}
 
 
     | LET OBJECTID ':' TYPEID let_chunk_list
-    { $$ = let ($2, $4, no_expr(), $5); }
+    { printf("let, with right recursion because of multiple interior arugments, no optional assign\n"); $$ = let ($2, $4, no_expr(), $5); }
     | LET OBJECTID ':' TYPEID IN expr
-    { $$ = let($2, $4, no_expr(), $6);}
+    { printf("let, with a single interior argument and no optional assign\n"); $$ = let($2, $4, no_expr(), $6);}
 
     | LET OBJECTID ':' TYPEID ASSIGN expr let_chunk_list
-    { $$ = let ($2, $4, $6, $7); }
+    { printf("let, with right recursion because of multiple interior arguments, with optional assign\n"); $$ = let ($2, $4, $6, $7); }
     | LET OBJECTID ':' TYPEID ASSIGN expr IN expr
-    { $$ = let($2, $4, $6, $8);}
+    { printf("let, with a single interior argument and optional assign\n"); $$ = let($2, $4, $6, $8);}
   
 
 
     /* TODO CASE */
     | CASE expr OF case_list ESAC
-    { typcase( $2, $4 );}
+    { printf("typcase, assemble case expr of caselist esac\n"); typcase( $2, $4 );}
 
 
 
 
     | NEW TYPEID
-    { $$ = new_($2);}
+    { printf("NEW TYPEID\n"); $$ = new_($2);}
     | ISVOID expr
-    { $$ = isvoid($2);}
+    { printf(" isvoid expr\n"); $$ = isvoid($2);}
     | expr '+' expr
-    { $$ = plus($1 , $3);}
+    { printf(" expr + expr\n"); $$ = plus($1 , $3);}
     | expr '-' expr
-    { $$ = sub($1, $3);}
+    { printf( " expr - expr\n"); $$ = sub($1, $3);}
     | expr '*' expr
-    { $$ = mul($1, $3);}
+    { printf(" expr * expr\n"); $$ = mul($1, $3);}
     | expr '/' expr
-    { $$ = divide($1, $3);}
-    | '~' expr 
-    { $$ = neg($2);}
+    { printf("expr / expr\n"); $$ = divide($1, $3);}
+    | '~' expr
+    { printf("tilde ~ expr\n"); $$ = neg($2);}
     | expr '<' expr
-    { $$ = lt($1, $3);}
+    { printf("expr < expr\n"); $$ = lt($1, $3);}
     | expr LE expr
-    { $$ = leq($1, $3);}
+    { printf("expr LE expr\n"); $$ = leq($1, $3);}
     | expr '=' expr
-    { $$ = eq($1 , $3);}
+    { printf("expr = expr\n"); $$ = eq($1 , $3);}
     | NOT expr
-    { $$ = comp($2);}
+    { printf("NOT expr\n"); $$ = comp($2);}
     | '(' expr ')'
-    { $$ = $2;}
+    { printf("parent ( expr ) paren\n"); $$ = $2;}
     | OBJECTID
-    { $$ = object($1);}
+    { printf("objectid\n"); $$ = object($1);}
     | INT_CONST
-    { $$ = int_const($1);}
+    { printf("int const\n"); $$ = int_const($1);}
     | STR_CONST
-    { $$ = string_const($1);} 
+    { printf("str const\n"); $$ = string_const($1);} 
     | BOOL_CONST 
-    { $$ = bool_const($1);}
+    { printf("bool const\n"); $$ = bool_const($1);}
     ;
 
 
