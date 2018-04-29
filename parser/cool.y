@@ -278,10 +278,10 @@
     
     
 
-    let_chunk_list: OBJECTID ':' TYPEID let_chunk_list
-    { printf(" let chunk list with right recursion, OBJID : TYPEID lcl \n"); $$ = let($1, $3, no_expr(), $4);}
-    | OBJECTID ':' TYPEID ASSIGN expr let_chunk_list
-    { printf(" let chunk list with right recursion, OBJID : TYPEID <- expr lcl \n"); $$ =let($1, $3, $5, $6);}
+    let_chunk_list: OBJECTID ':' TYPEID ',' let_chunk_list
+    { printf(" let chunk list with right recursion, OBJID : TYPEID lcl \n"); $$ = let($1, $3, no_expr(), $5);}
+    | OBJECTID ':' TYPEID ASSIGN expr ',' let_chunk_list
+    { printf(" let chunk list with right recursion, OBJID : TYPEID <- expr lcl \n"); $$ =let($1, $3, $5, $7);}
     | OBJECTID ':' TYPEID IN expr
     { printf("OBJID : TYPEID in expr \n"); $$ = let($1, $3, no_expr(), $5);}
     | OBJECTID ':' TYPEID ASSIGN expr IN expr
@@ -312,8 +312,8 @@
     | LET OBJECTID ':' TYPEID IN expr
     { printf("let, with a single interior argument and no optional assign\n"); $$ = let($2, $4, no_expr(), $6);}
 
-    | LET OBJECTID ':' TYPEID ASSIGN expr let_chunk_list
-    { printf("let, with right recursion because of multiple interior arguments, with optional assign\n"); $$ = let ($2, $4, $6, $7); }
+    | LET OBJECTID ':' TYPEID ASSIGN expr ',' let_chunk_list
+    { printf("let, with right recursion because of multiple interior arguments, with optional assign\n"); $$ = let ($2, $4, $6, $8); }
     | LET OBJECTID ':' TYPEID ASSIGN expr IN expr
     { printf("let, with a single interior argument and optional assign\n"); $$ = let($2, $4, $6, $8);}
   
