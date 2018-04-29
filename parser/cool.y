@@ -303,7 +303,7 @@
     { printf("WHILE expr LOOP expr POOL\n"); $$ = loop($2, $4);}
 
     /* TODO CHECK BLOCK CODE WITH TA */
-    | '{' semicolon_expr_list '}'
+    | '{' semicolon_expr_list ';' '}'
     { printf("{ semicolon expr list } \n"); $$ = block($2);}
 
 
