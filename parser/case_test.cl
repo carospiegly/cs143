@@ -14,11 +14,25 @@ class A {
 class Main inherits IO {
    is_even(num : Int) : Bool {
       (let x : Int <- num in
-            if x < 0 then is_even(~x) else
-            if 0 = x then true else
-            if 1 = x then false else
-                  is_even(x - 2)
-            fi fi fi
+	if 
+		x < 0
+	then 
+		is_even(~x) 
+	else
+		if 
+			0 = x 
+		then 
+			true 
+		else
+			if 
+				1 = x 
+			then 
+				false 
+			else
+				is_even(x - 2)
+			fi 
+		fi 
+	fi
       )
    };
 
