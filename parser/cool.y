@@ -268,7 +268,7 @@
     ;
    
     branch: OBJECTID ':' TYPEID DARROW expr ';'
-    { printf("OBJ : TYPEID >= expr ; \n"); branch( $1, $3, $5); }
+    { printf("OBJ : TYPEID >= expr ; \n"); $$ = branch( $1, $3, $5); }
     ;
     case_list: branch 
     { printf(" case list with 1 case\n"); $$ = single_Cases($1); } 
@@ -279,13 +279,13 @@
     
 
     let_chunk_list: OBJECTID ':' TYPEID let_chunk_list
-    { printf(" let chunk list with right recursion, OBJID : TYPEID lcl \n"); let($1, $3, no_expr(), $4);}
+    { printf(" let chunk list with right recursion, OBJID : TYPEID lcl \n"); $$ = let($1, $3, no_expr(), $4);}
     | OBJECTID ':' TYPEID ASSIGN expr let_chunk_list
-    { printf(" let chunk list with right recursion, OBJID : TYPEID <- expr lcl \n"); let($1, $3, $5, $6);}
+    { printf(" let chunk list with right recursion, OBJID : TYPEID <- expr lcl \n"); $$ =let($1, $3, $5, $6);}
     | OBJECTID ':' TYPEID IN expr
-    { printf("OBJID : TYPEID in expr \n"); let($1, $3, no_expr(), $5);}
+    { printf("OBJID : TYPEID in expr \n"); $$ = let($1, $3, no_expr(), $5);}
     | OBJECTID ':' TYPEID ASSIGN expr IN expr
-    { printf("OBJID : TYPEID <- expr in expr \n"); let($1, $3, $5, $7);}
+    { printf("OBJID : TYPEID <- expr in expr \n"); $$ = let($1, $3, $5, $7);}
     ;
     
 
@@ -321,7 +321,7 @@
 
     /* TODO CASE */
     | CASE expr OF case_list ESAC
-    { printf("typcase, assemble case expr of caselist esac\n"); typcase( $2, $4 );}
+    { printf("typcase, assemble case expr of caselist esac\n"); $$ = typcase( $2, $4 );}
 
 
 
