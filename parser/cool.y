@@ -146,7 +146,7 @@
     %type <expression> let_chunk_list
 
     /* Precedence declarations go here. */
-    %right IN
+   
     %right ASSIGN
     %precedence NOT
     %nonassoc '<' '=' LE 
@@ -156,7 +156,7 @@
     %precedence '~'
     %precedence '@'
     %precedence '.'
-    
+     %right IN
     %%
 
     /* 
@@ -169,20 +169,27 @@
 
 
     
-    class_list
-    : error ';'
-    {
-    $$ = nil_Classes();
-        parse_results = $$;}
-    |
+    class_list: 
     class    /* single class */
-    { $$ = single_Classes($1);
+    { 
+    printf("single class \n");
+    $$ = single_Classes($1);
     parse_results = $$; }
     | class_list class  /* several classes */
-    { $$ = append_Classes($1,single_Classes($2)); 
+    { 
+    printf("several class \n");
+    $$ = append_Classes($1,single_Classes($2)); 
     parse_results = $$; }
-    | class_list class error ';'   /* several classes */
-    { yyerrok; }
+    | class_list class error "};"  /* several classes */
+    {
+    printf("many class \n");
+     yyerrok; }
+     | error "};"
+    {
+    printf("error class \n");
+    $$ = nil_Classes();
+        parse_results = $$;}
+  
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
@@ -209,10 +216,16 @@
     
 
     /* Feature list may be empty, but no empty features in list. */
-    feature_list: feature /* single feature */
+    feature_list: 
+    feature /* single feature */
     { printf("1 in feature list\n"); $$ = single_Features($1); } 
     | feature_list feature /* several features */
     { printf("multiple in feature list\n"); $$ = append_Features($1, single_Features($2));}
+    | error ';'
+    { nil_Features();
+    yyerrok;}
+    | feature_list error ';'
+    { yyerrok; }
     ;
 
     empty_feature_list:
@@ -248,7 +261,7 @@
 
     semicolon_expr_list: /* empty */
     {  $$ = nil_Expressions(); }
-    | expr /* single expression */
+    | expr  /* single expression */
     { $$ = single_Expressions($1); } 
     | semicolon_expr_list ';' expr 
     { $$ = append_Expressions($1, single_Expressions($3));}
