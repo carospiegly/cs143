@@ -146,7 +146,7 @@
     %type <expression> let_chunk_list
 
     /* Precedence declarations go here. */
-    %right IN
+   
     %right ASSIGN
     %precedence NOT
     %nonassoc '<' '=' LE 
@@ -156,7 +156,7 @@
     %precedence '~'
     %precedence '@'
     %precedence '.'
-    
+     %right IN
     %%
 
     /* 
@@ -166,26 +166,26 @@
     { @$ = @1; ast_root = program($1); }
     ;
 
-
-
-    
-    class_list
-    : error ';'
-    {
-    	$$ = nil_Classes();
-        printf("class list with no classes\n");
-	parse_results = $$;}
-    |
+    class_list: 
     class    /* single class */
-    { 	printf("class list, with 1 class\n"); 
-	$$ = single_Classes($1);
-    	parse_results = $$; }
+    { 
+    printf("single class \n");
+    $$ = single_Classes($1);
+    parse_results = $$; }
     | class_list class  /* several classes */
-    { 	printf("class list with multiple classes, recurses\n"); 
-	$$ = append_Classes($1,single_Classes($2)); 
-    	parse_results = $$; }
-    | class_list class error ';'   /* several classes */
-    { printf(" class list class ERROR; \n"); yyerrok; }
+    { 
+    printf("many class \n");
+    $$ = append_Classes($1,single_Classes($2)); 
+    parse_results = $$; }
+    | class_list class error "};"  /* several classes */
+    {
+    printf("many class error \n");
+     yyerrok; }
+     | error "};"
+    {
+    printf("class list class ERROR \n");
+    $$ = nil_Classes();
+        parse_results = $$;}
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
@@ -216,10 +216,16 @@
     
 
     /* Feature list may be empty, but no empty features in list. */
-    feature_list: feature /* single feature */
+    feature_list: 
+    feature /* single feature */
     { printf("1 in feature list\n"); $$ = single_Features($1); } 
     | feature_list feature /* several features */
     { printf("multiple in feature list\n"); $$ = append_Features($1, single_Features($2));}
+    | error ';'
+    { nil_Features();
+    yyerrok;}
+    | feature_list error ';'
+    { yyerrok; }
     ;
 
     empty_feature_list:
