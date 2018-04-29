@@ -229,7 +229,7 @@
     ;
 
     empty_feature_list:
-    { printf("empty feature list\n"); nil_Features(); }
+    { printf("empty feature list\n"); $$ = nil_Features(); }
 
     feature: OBJECTID ':' TYPEID ';'
     { printf("vanilla feature\n"); $$ = attr($1, $3, no_expr());}
