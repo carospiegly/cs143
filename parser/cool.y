@@ -318,10 +318,15 @@
     {  $$ = let($1, $3, no_expr(), $5);}
     
     | OBJECTID ':' TYPEID ASSIGN expr IN expr
-    {  $$ = let($1, $3, $5, $7);}
-    
+    {  $$ = let($1, $3, $5, $7);} 
+
     | error ',' let_chunk_list
-    { yyerrok; }
+    { $$ = $3;
+      yyerrok; }
+
+    | error IN expr
+    { $$ = $3;
+      yyerrok; }
     ;
     
 
@@ -352,6 +357,14 @@
 
     | LET OBJECTID ':' TYPEID IN expr
     {  $$ = let($2, $4, no_expr(), $6);}
+
+    | LET error ',' let_chunk_list
+    { $$ = $4;
+      yyerrok; }
+
+    | LET error IN expr 
+    { $$ = $4;
+      yyerrok; }
 
     | LET OBJECTID ':' TYPEID ASSIGN expr ',' let_chunk_list
     {  $$ = let ($2, $4, $6, $8); }
