@@ -276,17 +276,17 @@
 
 
     block_expr_list: 
-      expr /* single expression */
+      expr ';'/* single expression */
     { $$ = single_Expressions($1); } 
     
-    | block_expr_list ';' expr 
-    { $$ = append_Expressions($1, single_Expressions($3)); }
+    | block_expr_list expr ';'
+    { $$ = append_Expressions($1, single_Expressions($2)); }
     
     | error ';'
     { $$ = nil_Expressions();
       yyerrok; }
     
-    | block_expr_list ';' error 
+    | block_expr_list error ';'
     { $$ = $1;
       yyerrok; }
     ;
@@ -349,7 +349,7 @@
     | WHILE expr LOOP expr POOL
     { $$ = loop($2, $4);}
    
-    | '{' block_expr_list ';' '}'
+    | '{' block_expr_list '}'
     { $$ = block($2); }
 
     | LET OBJECTID ':' TYPEID ',' let_chunk_list
