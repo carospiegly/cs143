@@ -1,0 +1,41 @@
+#1
+_program
+  #1
+  _class
+    A
+    Object
+    "let.cl"
+    (
+    #3
+    _method
+      value
+      Int
+      #3
+      _let
+        caroline
+        Int
+        #0
+        _no_expr
+        : _no_type
+        #3
+        _let
+          john
+          Int
+          #3
+          _int
+            7
+          : _no_type
+          #3
+          _plus
+            #3
+            _int
+              8
+            : _no_type
+            #3
+            _int
+              8
+            : _no_type
+          : _no_type
+        : _no_type
+      : _no_type
+    )
