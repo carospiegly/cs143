@@ -5,7 +5,8 @@
 #include <stdarg.h>
 #include "semant.h"
 #include "utilities.h"
-
+#include <list>
+#include <vector>
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -83,9 +84,46 @@ static void initialize_constants(void)
 
 
 
+/* We perform some semantic analysis here.
+  
+   This function accepts "Classes", which is a typedef for typedef Classes_class *Classes
+   "Classes_class" is in turn defined as "typedef list_node<Class_> Classes_class"
+   
+   We use the list_node interface, which is an implementation of a list.
+
+   "Class_" is a type def for :typedef class Class__class *Class_"
+
+*/
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
-    /* Fill this in */
+	// walk through each of the classes in the class list of the program
+	list_node<Class__class *> class_deep_copy = classes->copy_list(); // make a deep copy. We might need to modify it as we go???	
+
+	// PASS 1
+	// make a vector with all of the class names
+	//keep global counter of how many classes we have seen so far
+	std::vector<std::string> discovered_classes;
+
+	// in what cases would this not be equal to classes.len()?
+	int num_classes_seen = 0;
+	for(int i = classes->first(); classes->more(i); i = classes->next(i))
+	{
+		Class__class *curr_class = classes->nth(i);
+		// discover who its parent is???
+		Symbol parent = curr_class->parent;
+		discovered_classes.push_back( "name of parent goes here " );
+	}
+
+
+	// PASS 2 MAKE SURE THAT EACH CLASS THAT WAS INHERITED FROM WAS REAL
+	// decremenet the total number of classes if any of them were fake
+	
+
+	// PASS 3
+	// initialize the Graph object
+	// keep global counter of how many classes we have seen so far
+	// ADD edge TO THE GRAPH FOR EACH
+
 
 }
 
@@ -245,11 +283,134 @@ void program_class::semant()
     ClassTable *classtable = new ClassTable(classes);
 
     /* some semantic analysis code may go here */
-
+    
     if (classtable->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;
 	exit(1);
     }
 }
+
+
+/*  This will be our function that recursively descends the AST.
+*/
+void program_class::process_standing_node(ostream& stream, int n)
+{
+   // dump_line(stream,n,this);
+   // stream << pad(n) << "_object\n";
+   // dump_Symbol(stream, n+2, name);
+   // dump_type(stream,n);
+}
+
+
+
+
+ /* USE TO DETECT A CYCLE IN A GRAPH */
+class ClassGraph
+{
+    int V;    // No. of vertices
+    std::list<int> *adj;    // Pointer to an array containing adjacency lists
+    bool isCyclicUtil(int v, bool visited[], bool *rs);  // used by isCyclic()
+public:
+    ClassGraph(int V);   // Constructor
+    void addEdge(int v, int w);   // to add an edge to graph
+    bool isCyclic();    // returns true if there is a cycle in this graph
+};
+
+ClassGraph::ClassGraph(int V)
+{
+    this->V = V;
+    adj = new std::list<int>[V];
+}
+
+
+
+void ClassGraph::addEdge(int v, int w)
+{
+    adj[v].push_back(w); // Add w to v’s list.
+}
+
+// This function is a variation of DFSUytil() in https://www.geeksforgeeks.org/archives/18212
+bool ClassGraph::isCyclicUtil(int v, bool visited[], bool *recStack)
+{
+    if(visited[v] == false)
+    {
+        // Mark the current node as visited and part of recursion stack
+        visited[v] = true;
+        recStack[v] = true;
+
+        // Recur for all the vertices adjacent to this vertex
+        std::list<int>::iterator i;
+        for(i = adj[v].begin(); i != adj[v].end(); ++i)
+        {
+            if ( !visited[*i] && isCyclicUtil(*i, visited, recStack) )
+                return true;
+            else if (recStack[*i])
+                return true;
+        }
+
+    }
+    recStack[v] = false;  // remove the vertex from recursion stack
+    return false;
+}
+
+
+
+// Returns true if the graph contains a cycle, else false.
+// This function is a variation of DFS() in https://www.geeksforgeeks.org/archives/18212
+bool ClassGraph::isCyclic()
+{
+    // Mark all the vertices as not visited and not part of recursion
+    // stack
+    bool *visited = new bool[V];
+    bool *recStack = new bool[V];
+    for(int i = 0; i < V; i++)
+    {
+        visited[i] = false;
+        recStack[i] = false;
+    }
+
+    // Call the recursive helper function to detect cycle in different
+    // DFS trees
+    for(int i = 0; i < V; i++)
+        if (isCyclicUtil(i, visited, recStack))
+            return true;
+
+    return false;
+}
+
+
+
+
+/*
+Code taken from
+https://www.geeksforgeeks.org/detect-cycle-in-a-graph/
+*/
+bool check_inheritance_graph_for_cycles()
+{
+    // Create a graph given in the above diagram
+    ClassGraph g(4);
+    g.addEdge(0, 1);
+    g.addEdge(0, 2);
+    g.addEdge(1, 2);
+    g.addEdge(2, 0);
+    g.addEdge(2, 3);
+    g.addEdge(3, 3);
+
+    if(g.isCyclic())
+    {
+        cout << "Graph contains cycle";
+        return true;
+    } else {
+        cout << "Graph doesn't contain cycle";
+        return false;
+    }
+}
+
+
+
+
+
+
+
 
 
