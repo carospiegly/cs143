@@ -58,12 +58,14 @@ void dump_with_types(ostream&, int);            \
 virtual Symbol get_filename() = 0;      \
 virtual void dump_with_types(ostream&,int) = 0; \
 virtual Symbol get_name() = 0; \
+virtual Symbol get_parent() = 0; \
 
 
 #define class__EXTRAS \
 Symbol get_filename() { return filename; }             \
 void dump_with_types(ostream&,int);   \
 Symbol get_name() { return name; } \
+Symbol get_parent() { return parent; } \
 
 #define Feature_EXTRAS                                        \
 virtual void dump_with_types(ostream&,int) = 0; \

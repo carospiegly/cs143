@@ -23,6 +23,7 @@ class ClassTable {
 private:
   int semant_errors;
   void install_basic_classes();
+  bool check_inheritance_graph_for_cycles();
   ostream& error_stream;
 
 public:
