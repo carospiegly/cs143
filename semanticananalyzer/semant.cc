@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include "semant.h"
 #include "utilities.h"
+
 #include <list>
 #include <vector>
 
@@ -97,12 +98,12 @@ static void initialize_constants(void)
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
 	// walk through each of the classes in the class list of the program
-	list_node<Class__class *> class_deep_copy = classes->copy_list(); // make a deep copy. We might need to modify it as we go???	
+	//list_node<Class__class *> class_deep_copy = classes->copy_list(); // make a deep copy. We might need to modify it as we go???	
 
 	// PASS 1
 	// make a vector with all of the class names
 	//keep global counter of how many classes we have seen so far
-	std::vector<std::string> discovered_classes;
+	std::vector<Symbol> discovered_classes;
 
 	// in what cases would this not be equal to classes.len()?
 	int num_classes_seen = 0;
@@ -110,10 +111,9 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 	{
 		Class__class *curr_class = classes->nth(i);
 		// discover who its parent is???
-		Symbol parent = curr_class->parent;
-		discovered_classes.push_back( "name of parent goes here " );
+		//Symbol parent = curr_class->parent;
+		discovered_classes.push_back( curr_class->get_name() );
 	}
-
 
 	// PASS 2 MAKE SURE THAT EACH CLASS THAT WAS INHERITED FROM WAS REAL
 	// decremenet the total number of classes if any of them were fake
