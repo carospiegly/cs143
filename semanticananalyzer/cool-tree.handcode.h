@@ -52,7 +52,7 @@ virtual void dump_with_types(ostream&, int) = 0;
 
 #define program_EXTRAS                          \
 void semant();     				\
-void dump_with_types(ostream&, int);            \
+void dump_with_types(ostream&,int);            \
 
 #define Class__EXTRAS  \
 virtual Symbol get_filename() = 0;      \

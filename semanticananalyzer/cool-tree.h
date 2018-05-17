@@ -465,7 +465,17 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   Symbol get_type()
+   {
+    
+      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
+         //error
 
+      }
+      
+      type = Int; 
+
+   }
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -487,7 +497,16 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+ Symbol get_type()
+   {
+    
+      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
+         //error
+      }
+      
+      type = Int; 
 
+   }
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -509,7 +528,16 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+ Symbol get_type()
+   {
+    
+      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
+         //error
+      }
+      
+      type = Int; 
 
+   }
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -531,7 +559,16 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+ Symbol get_type()
+   {
+    
+      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
+         //error
+      }
+      
+      type = Int; 
 
+   }
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -551,7 +588,16 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+ Symbol get_type()
+   {
+    
+      if(! (e1-> get_type()) == Int){
+         //error
+      }
+      
+      type = Int; 
 
+   }
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -574,6 +620,19 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
+   {
+      // this
+      
+      if(! (
+            (e1-> get_type(symtab, mtab, stream)) == Int) 
+            && ((e2-> get_type(symtab, mtab, stream)) == Int)
+         ) {
+         //error
+      }
+      type = Bool; 
+   }
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -595,6 +654,33 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream, int n)
+   {
+
+      Symbol T1 = e1->get_type( symtab, mtab, stream);
+      Symbol T2 = e2->get_type( symtab, mtab, stream);
+      if ( ((T1 == Bool) && (T2 != Bool)) || ((T2 == Bool) && (T1 != Bool)) ){
+         stream << "You tried to check different types for equality v bad";
+      }
+      if ( ((T1 == Integer) && (T2 != Integer)) || ((T2 == Integer) && (T1 != Integer)) )
+      {
+         stream << "You tried to check different types for equality v bad";
+      }
+      if ( ((T1 == String) && (T2 != String)) || ((T2 == String) && (T1 != String)) )
+      {
+         stream << "You tried to check different types for equality v bad";
+      }
+   
+
+      if ( ! are_bools() || ! are_ints || !are_strins 
+      {
+         stream << ""
+      }
+
+   }
+
+
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -698,6 +784,17 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   Symbol get_type(ostream& stream, int n)
+   {
+      dump_line(stream,n,this);
+      stream << pad(n) << "_string\n";
+      stream << pad(n+2) << "\"";
+      print_escaped_string(stream,token->get_string());
+      stream << "\"\n";
+      dump_type(stream,n);
+   }
+
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -717,6 +814,12 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   Symbol get_type(ostream& stream)
+   {
+      // member variables are:
+      // type_name, this
+    }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -738,6 +841,11 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   Symbol get_type(ostream& stream)
+   {
+      e1->get_type(stream);
+   }
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -755,6 +863,11 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   Symbol get_type()
+   {
+      // can use "this" if needed
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS

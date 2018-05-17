@@ -264,6 +264,11 @@ void ClassTable::install_basic_classes() {
 						      Str, 
 						      no_expr()))),
 	       filename);
+
+
+
+
+    
 }
 
 ////////////////////////////////////////////////////////////////////
