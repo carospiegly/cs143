@@ -99,6 +99,7 @@ static void initialize_constants(void)
 */
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
+
 	// walk through each of the classes in the class list of the program
 	//list_node<Class__class *> class_deep_copy = classes->copy_list(); // make a deep copy. We might need to modify it as we go???	
 
@@ -130,10 +131,12 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
                 Symbol child_class_name = curr_class->get_name();
 		Symbol parent_class_name = curr_class->get_parent();
 		if( valid_classes.find(parent_class_name) == valid_classes.end() )
+		{
 			valid_classes.erase(child_class_name);		
 			std::cout << "THROW ERROR! child inherits from an undefined class" << std::endl;
-		{
+		}
 	}
+
 	std::map<Symbol,int> symbol_to_class_index_map;
 	int unique_class_idx = 0;
 	// PASS 3 over the program
@@ -149,6 +152,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 			// besides acyclicity, we can say this class is legit bc it persisted in the valid classes set        
 			// SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
 			if (parent_class_name != NULL)
+			{
 				child_to_parent_classmap.insert(std::make_pair(child_class_name, parent_class_name ));
         		}
 			symbol_to_class_index_map.insert(std::make_pair(child_class_name,unique_class_idx));
@@ -158,6 +162,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 	// unique_class_idx holds the total number of classes
 	bool is_cyclic = check_inheritance_graph_for_cycles(unique_class_idx, symbol_to_class_index_map, child_to_parent_classmap );
 	// RETURN SOME VALUE return is_cyclic;
+
 }
 
 void ClassTable::install_basic_classes() {
@@ -431,19 +436,20 @@ bool ClassTable::check_inheritance_graph_for_cycles(	int num_classes,
     for (std::map<Symbol, Symbol>::iterator it=child_to_parent_classmap.begin(); it!=child_to_parent_classmap.end(); ++it){
 	
 	// SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
-
-	int parent_idx = *( symbol_to_class_index_map.find( it->second ) );
-	int child_idx = *( symbol_to_class_index_map.find( it->first ) );
+	Symbol parent_class_name = it->second;
+	Symbol child_class_name = it->first;
+	int parent_idx = symbol_to_class_index_map.find( parent_class_name )->second;
+	int child_idx = symbol_to_class_index_map.find( child_class_name )->second;
         std::cout << "Adding edge from " << parent_idx << " to " << child_idx << std::endl;
 	g.addEdge(parent_idx, child_idx);
    }
 
     if(g.isCyclic())
     {
-        cout << "Graph contains cycle";
+        std::cout << "Graph contains cycle" << std::endl;
         return true;
     } else {
-        cout << "Graph doesn't contain cycle";
+        std::cout << "Graph doesn't contain cycle" << std::endl;
         return false;
     }
 }
