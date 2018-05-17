@@ -116,7 +116,6 @@ ClassTable::ClassTable(Classes classes,
 	verify_parent_classes_are_defined(valid_classes);
 	
 	std::map<Symbol,int> symbol_to_class_index_map;
-	int unique_class_idx = 0;
 	// PASS 3 over the program
 	// keep global counter of how many classes we have seen so far, and this is the unique ID for each class
         std::map<Symbol,Symbol> child_to_parent_classmap;
@@ -126,7 +125,6 @@ ClassTable::ClassTable(Classes classes,
 	// RETURN SOME VALUE return is_cyclic;
 
 }
-
 
 /*
         // PASS 1
@@ -200,9 +198,11 @@ void ClassTable::add_class_methods_to_method_table(Class__class *curr_class,
 }
 
 
-void ClassTable::populate_child_parent_and_unique_ID_maps(child_to_parent_classmap, symbol_to_class_index_map)
+void ClassTable::populate_child_parent_and_unique_ID_maps( std::map<Symbol,Symbol> & child_to_parent_classmap,
+								std::map<Symbol,int> & symbol_to_class_index_map)
 {
-        for(int i = classes->first(); classes->more(i); i = classes->next(i))
+        int unique_class_idx = 0;
+	for(int i = classes->first(); classes->more(i); i = classes->next(i))
         {
                 Class__class *curr_class = classes->nth(i);
                 Symbol child_class_name = curr_class->get_name();
@@ -223,6 +223,7 @@ void ClassTable::populate_child_parent_and_unique_ID_maps(child_to_parent_classm
                         add_class_methods_to_method_table(curr_class, methodtable)
                 }
         }
+	// assert size of set is the same size as the number of unique classes
 }
 
 

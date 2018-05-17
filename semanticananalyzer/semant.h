@@ -33,6 +33,8 @@ private:
   void add_class_methods_to_method_table(Class__class *curr_class,
                                         SymbolTable<std::pair(Symbol,Symbol),
                                                 std::vector<Symbol>> & method_table);
+  void populate_child_parent_and_unique_ID_maps(std::map<Symbol,Symbol> & child_to_parent_classmap,
+                                                std::map<Symbol,int> & symbol_to_class_index_map);
   ostream& error_stream;
 
 public:
