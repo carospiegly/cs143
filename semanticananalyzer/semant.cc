@@ -105,7 +105,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 	// make a vector with all of the class names
 	//keep global counter of how many classes we have seen so far
 	
-    std::map<Symbol, Symbol> discovered_classes;
+    std::map<Symbol> discovered_classes;
 	// in what cases would this not be equal to classes.len()?
 	int num_classes_seen = 0;
 	for(int i = classes->first(); classes->more(i); i = classes->next(i))
@@ -117,17 +117,38 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 	}
 
 
-    check_inheritance_graph_for_cycles();
+	std::map<Symbol,int> symbol_to_class_index_map;
+	int num_classes = 0;
+	for (std::map<Symbol, Symbol>::iterator it=discovered_classes.begin(); it!=discovered_classes.end(); ++it){
+
+		num_classes++;
+	}
 
 
 	// PASS 2 MAKE SURE THAT EACH CLASS THAT WAS INHERITED FROM WAS REAL
 	// decremenet the total number of classes if any of them were fake
+	for(int i = classes->first(); classes->more(i); i = classes->next(i))
+        {
+                Class__class *curr_class = classes->nth(i);
+                // discover who its parent is???
+                //Symbol parent = curr_class->parent;
+                discovered_classes.insert( curr_class->get_name(), curr_class->get_parent() );
+        }
 	
-
 	// PASS 3
 	// initialize the Graph object
 	// keep global counter of how many classes we have seen so far
-	// ADD edge TO THE GRAPH FOR EACH
+        std::map<Symbol,Symbol> child_to_parent_classmap;
+        for (std::map<Symbol, Symbol>::iterator it=discovered_classes.begin(); it!=discovered_classes.end(); ++it){
+                child_to_parent_classmap.insert( curr_class->get_name(), curr_class->get_parent() );
+        }
+
+	bool is_cyclic = check_inheritance_graph_for_cycles( child_to_parent_classmap );
+
+
+
+
+
 
 
 }
@@ -313,7 +334,7 @@ void program_class::semant()
 class ClassGraph
 {
     int V;    // No. of vertices
-    std::list<Symbol> *adj;    // Pointer to an array containing adjacency lists
+    std::list<int> *adj;    // Pointer to an array containing adjacency lists
     bool isCyclicUtil(Symbol v, bool visited[], bool *rs);  // used by isCyclic()
 public:
     ClassGraph(int V);   // Constructor
@@ -324,18 +345,18 @@ public:
 ClassGraph::ClassGraph(int V)
 {
     this->V = V;
-    adj = new std::list<Symbol>[V];
+    adj = new std::list<int>[V];
 }
 
 
 
-void ClassGraph::addEdge(Symbol v, Symbol w)
+void ClassGraph::addEdge(int v, int w)
 {
     adj[v].push_back(w); // Add w to v’s list.
 }
 
 // This function is a variation of DFSUytil() in https://www.geeksforgeeks.org/archives/18212
-bool ClassGraph::isCyclicUtil(Symbol v, bool visited[], bool *recStack)
+bool ClassGraph::isCyclicUtil(int v, bool visited[], bool *recStack)
 {
     if(visited[v] == false)
     {
@@ -390,24 +411,18 @@ bool ClassGraph::isCyclic()
 Code taken from
 https://www.geeksforgeeks.org/detect-cycle-in-a-graph/
 */
-bool ClassTable::check_inheritance_graph_for_cycles()
+bool ClassTable::check_inheritance_graph_for_cycles(int num_classes, std::map<Symbol,int> symbol_to_class_index_map, std::map<Symbol,Symbol> child_to_parent_classmap)
 {
-    int num_classes = 0;
-   for (std::map<Symbol, Symbol>::iterator it=discovered_classes.begin(); it!=discovered_classes.end(); ++it){
-
-    num_classes++;
-
-   }
 
     // Create a graph given in the above diagram
     ClassGraph g(num_classes);
 
-    for (std::map<Symbol, Symbol>::iterator it=discovered_classes.begin(); it!=discovered_classes.end(); ++it){
-
-        g.addEdge(it->first, it->second);
-
+    for (std::map<Symbol, Symbol>::iterator it=child_to_parent_classmap.begin(); it!=child_to_parent_classmap.end(); ++it){
+	
+	int parent_idx = *( symbol_to_class_index_map.find( it->second ) );
+	int child_idx = *( symbol_to_class_index_map.find( it->first ) );
+        g.addEdge(parent_idx, child_idx);
    }
-   
 
     if(g.isCyclic())
     {
