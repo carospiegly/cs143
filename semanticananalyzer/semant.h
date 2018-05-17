@@ -28,6 +28,11 @@ private:
   bool check_inheritance_graph_for_cycles(int num_classes, 
 					std::map<Symbol,int> & symbol_to_class_index_map, 
 					std::map<Symbol,Symbol> & child_to_parent_classmap);
+  std::set<Symbol> gather_valid_classes();
+  void verify_parent_classes_defined(std::set<Symbol> & valid_classes);
+  void add_class_methods_to_method_table(Class__class *curr_class,
+                                        SymbolTable<std::pair(Symbol,Symbol),
+                                                std::vector<Symbol>> & method_table);
   ostream& error_stream;
 
 public:
