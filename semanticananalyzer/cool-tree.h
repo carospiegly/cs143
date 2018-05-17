@@ -188,6 +188,27 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
 
+   bool feat_is_method()
+   {
+      return true;
+   }
+
+   std::vector<Symbol> get_params_and_rt()
+   {
+      std::vector<Symbol> params_and_rt;
+      // get the Symbols out of the formals
+
+      for(int i = formals->first(); formals->more(i); i = formals->next(i))
+      {
+         formal_class *curr_formal = formals->nth(i);
+         Symbol formal_type = curr_formal->get_type_decl();
+         params_and_rt.push_back( formal_type );
+      }
+      params_and_rt.push_back( return_type );
+      return params_and_rt;
+   }
+
+
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
 #endif
@@ -212,6 +233,11 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
 
+   bool feat_is_method()
+   {
+      return false;
+   }
+
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
 #endif
@@ -233,6 +259,11 @@ public:
    }
    Formal copy_Formal();
    void dump(ostream& stream, int n);
+
+   Symbol get_type_decl() 
+   {
+      return type_decl;
+   }
 
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS
@@ -306,6 +337,17 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream, int n)
+   {
+      // typename, name
+      expr->get_type(symtab, mtab, stream);
+
+      for(int i = actual->first(); actual->more(i); i = actual->next(i))
+        actual->nth(i)->get_type(symtab, mtab, stream);
+
+   }
+
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -329,6 +371,16 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
+   {
+
+      expr->get_type(symtab, mtab, stream);
+
+      for(int i = actual->first(); actual->more(i); i = actual->next(i))
+        actual->nth(i)->get_type(symtab, mtab, stream);
+
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -375,6 +427,18 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
+   {
+      if ( pred->get_type(symtab, mtab, stream)->get_type() != Bool )
+      {
+         stream << "You did not use a boolean predicate for the while loop";
+      }
+      // check if T2 is in the table!!
+      // body->get_type(symtab, mtab, stream);
+
+      type = Object;
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -671,13 +735,7 @@ public:
       {
          stream << "You tried to check different types for equality v bad";
       }
-   
-
-      if ( ! are_bools() || ! are_ints || !are_strins 
-      {
-         stream << ""
-      }
-
+      type = Bool;
    }
 
 
@@ -704,6 +762,12 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
+   {
+      e1->get_type(symtab, mtab, stream);
+      e2->get_type(symtab, mtab, stream);
+   }
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -723,6 +787,11 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
+   {
+      e1->get_type(symtab, mtab, stream);
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS

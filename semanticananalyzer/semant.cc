@@ -97,7 +97,13 @@ static void initialize_constants(void)
    "Class_" is a type def for :typedef class Class__class *Class_"
 
 */
-ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
+ClassTable::ClassTable(Classes classes, 
+                        SymbolTable<Symbol,Symbol> & id_to_type_symtab,
+                        SymbolTableSymbolTable<std::pair(Symbol,Symbol),
+                                                std::vector<Symbol>> & method_table) : semant_errors(0) , 
+                                                                    error_stream(cerr) {
+
+
 
 
 	// walk through each of the classes in the class list of the program
@@ -124,12 +130,13 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 
 
 	// PASS 2 MAKE SURE THAT EACH CLASS THAT WAS INHERITED FROM WAS REAL
-        // decremenet the size of the set (total number of classes) if any of them were fake
-        for(int i = classes->first(); classes->more(i); i = classes->next(i))
-        {
-                Class__class *curr_class = classes->nth(i);
-                Symbol child_class_name = curr_class->get_name();
-		Symbol parent_class_name = curr_class->get_parent();
+    // decremenet the size of the set (total number of classes) if any of them were fake
+    for(int i = classes->first(); classes->more(i); i = classes->next(i))
+    {
+        Class__class *curr_class = classes->nth(i);
+        Symbol child_class_name = curr_class->get_name();
+		// account if no parent
+        Symbol parent_class_name = curr_class->get_parent();
 		if( valid_classes.find(parent_class_name) == valid_classes.end() )
 		{
 			valid_classes.erase(child_class_name);		
@@ -154,9 +161,30 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 			if (parent_class_name != NULL)
 			{
 				child_to_parent_classmap.insert(std::make_pair(child_class_name, parent_class_name ));
-        		}
+        	}
 			symbol_to_class_index_map.insert(std::make_pair(child_class_name,unique_class_idx));
 			unique_class_idx++;
+
+            // add the class to the symbol table
+            // add the methods of this class to the methodtable
+            list_node<Feature> *curr_features = curr_class->features;
+            for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
+            {
+                Feature_class *curr_feat = curr_features->nth(j);
+                // every feature is either a method, or an attribute
+
+                if (curr_feat->feat_is_method() ) // I am a method! ;
+                {
+                        // key is (curr class, name of the method)
+                        std::pair key = std::make_pair( child_class_name, curr_feat->get_name() );
+
+                        // the value is the std::vector<Symbols>, all parameters and then return type
+                        std::vector<Symbol> params_and_rt = curr_feat->get_params_and_rt();
+
+                        // if its a method, then we need to add it to the method table
+                        methodtable->addid( key, params_and_rt );      
+                }
+            }
 		}
 	}
 	// unique_class_idx holds the total number of classes
@@ -268,7 +296,7 @@ void ClassTable::install_basic_classes() {
 
 
 
-    
+
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -322,8 +350,42 @@ void program_class::semant()
 {
     initialize_constants();
 
+
+    SymbolTable<Symbol,Symbol> *id_to_type_symtab = new SymbolTable<Symbol,Symbol>();
+
+    // method table is indexed by Class Symbol, Method Symbol
+    SymbolTable<std::pair(Symbol,Symbol),std::vector<Symbol>> method_table = 
+        new SymbolTable<std::pair(Symbol,Symbol),std::vector<Symbol>>();
+    method_table->
+
     /* ClassTable constructor may do some semantic analysis */
-    ClassTable *classtable = new ClassTable(classes);
+    ClassTable *classtable = new ClassTable(classes, id_to_type_symtab, method_table);
+
+    // WE LOOP THROUGH IN TERMS OF CLASS HIERARCHY! NOT IN TERMS OF PROGRAM ORDER
+
+    // Perform all type checking
+    for(int i = classes->first(); classes->more(i); i = classes->next(i))
+    {
+        id_to_type_symtab->enter_scope();
+
+        // add the attributes right here
+        // // if its an attribute, then its a variable we need to add to the symbol table
+        // if( curr_feat->feat_is_method() )
+        // {
+        //     /* is attribute */
+        //     id_to_type_symtab->addid( curr_feat->get_name(), get_type_decl() );
+        // } 
+
+        
+        Class__class *curr_class = classes->nth(i);
+        // get down to the first expression of class
+        curr_class->get_type(id_to_type_symtab, method_table, stream );  
+        id_to_type_symtab->exit_scope(); 
+    }
+
+    // free the memory
+    delete id_to_type_symtab;
+    delete method_table;
 
     /* some semantic analysis code may go here */
     
@@ -332,6 +394,7 @@ void program_class::semant()
 	exit(1);
     }
 }
+
 
 
 // /*  This will be our function that recursively descends the AST.
