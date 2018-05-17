@@ -7,6 +7,7 @@
 #include "stringtab.h"
 #include "symtab.h"
 #include "list.h"
+#include <map>
 
 #define TRUE 1
 #define FALSE 0
@@ -24,6 +25,9 @@ private:
   int semant_errors;
   void install_basic_classes();
   bool check_inheritance_graph_for_cycles();
+  bool check_inheritance_graph_for_cycles(int num_classes, 
+					std::map<Symbol,int> & symbol_to_class_index_map, 
+					std::map<Symbol,Symbol> & child_to_parent_classmap);
   ostream& error_stream;
 
 public:

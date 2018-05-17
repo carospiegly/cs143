@@ -8,6 +8,7 @@
 #include <map>
 #include <list>
 #include <vector>
+#include <set>
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -102,55 +103,61 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 	//list_node<Class__class *> class_deep_copy = classes->copy_list(); // make a deep copy. We might need to modify it as we go???	
 
 	// PASS 1
-	// make a vector with all of the class names
-	//keep global counter of how many classes we have seen so far
+	// make a set with all of the class names (not including the parent each is inherited from)
+	// the size of the set is how many classes we have seen so far
 	
-    std::map<Symbol> discovered_classes;
+	std::set<Symbol> valid_classes;
 	// in what cases would this not be equal to classes.len()?
-	int num_classes_seen = 0;
 	for(int i = classes->first(); classes->more(i); i = classes->next(i))
 	{
 		Class__class *curr_class = classes->nth(i);
-		// discover who its parent is???
-		//Symbol parent = curr_class->parent;
-		discovered_classes.insert( curr_class->get_name(), curr_class->get_parent() );
-	}
-
-
-	std::map<Symbol,int> symbol_to_class_index_map;
-	int num_classes = 0;
-	for (std::map<Symbol, Symbol>::iterator it=discovered_classes.begin(); it!=discovered_classes.end(); ++it){
-
-		num_classes++;
+		Symbol curr_class_name = curr_class->get_name();
+		if(valid_classes.find(curr_class_name) == valid_classes.end() )
+		{
+			// does not exist in the map yet
+			valid_classes.insert( curr_class_name );
+		} else {
+			std::cout << "THROW ERROR! CLASS DEFINED TWICE" << std::endl;
+		}
 	}
 
 
 	// PASS 2 MAKE SURE THAT EACH CLASS THAT WAS INHERITED FROM WAS REAL
-	// decremenet the total number of classes if any of them were fake
+        // decremenet the size of the set (total number of classes) if any of them were fake
+        for(int i = classes->first(); classes->more(i); i = classes->next(i))
+        {
+                Class__class *curr_class = classes->nth(i);
+                Symbol child_class_name = curr_class->get_name();
+		Symbol parent_class_name = curr_class->get_parent();
+		if( valid_classes.find(parent_class_name) == valid_classes.end() )
+			valid_classes.erase(child_class_name);		
+			std::cout << "THROW ERROR! child inherits from an undefined class" << std::endl;
+		{
+	}
+	std::map<Symbol,int> symbol_to_class_index_map;
+	int unique_class_idx = 0;
+	// PASS 3 over the program
+	// keep global counter of how many classes we have seen so far, and this is the unique ID for each class
+        std::map<Symbol,Symbol> child_to_parent_classmap;
 	for(int i = classes->first(); classes->more(i); i = classes->next(i))
         {
                 Class__class *curr_class = classes->nth(i);
-                // discover who its parent is???
-                //Symbol parent = curr_class->parent;
-                discovered_classes.insert( curr_class->get_name(), curr_class->get_parent() );
-        }
-	
-	// PASS 3
-	// initialize the Graph object
-	// keep global counter of how many classes we have seen so far
-        std::map<Symbol,Symbol> child_to_parent_classmap;
-        for (std::map<Symbol, Symbol>::iterator it=discovered_classes.begin(); it!=discovered_classes.end(); ++it){
-                child_to_parent_classmap.insert( curr_class->get_name(), curr_class->get_parent() );
-        }
-
-	bool is_cyclic = check_inheritance_graph_for_cycles( child_to_parent_classmap );
-
-
-
-
-
-
-
+                Symbol child_class_name = curr_class->get_name();
+                Symbol parent_class_name = curr_class->get_parent();
+		if( valid_classes.find(child_class_name) != valid_classes.end() )
+		{
+			// besides acyclicity, we can say this class is legit bc it persisted in the valid classes set        
+			// SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
+			if (parent_class_name != NULL)
+				child_to_parent_classmap.insert(std::make_pair(child_class_name, parent_class_name ));
+        		}
+			symbol_to_class_index_map.insert(std::make_pair(child_class_name,unique_class_idx));
+			unique_class_idx++;
+		}
+	}
+	// unique_class_idx holds the total number of classes
+	bool is_cyclic = check_inheritance_graph_for_cycles(unique_class_idx, symbol_to_class_index_map, child_to_parent_classmap );
+	// RETURN SOME VALUE return is_cyclic;
 }
 
 void ClassTable::install_basic_classes() {
@@ -335,10 +342,10 @@ class ClassGraph
 {
     int V;    // No. of vertices
     std::list<int> *adj;    // Pointer to an array containing adjacency lists
-    bool isCyclicUtil(Symbol v, bool visited[], bool *rs);  // used by isCyclic()
+    bool isCyclicUtil(int v, bool visited[], bool *rs);  // used by isCyclic()
 public:
     ClassGraph(int V);   // Constructor
-    void addEdge(Symbol v, Symbol w);   // to add an edge to graph
+    void addEdge(int v, int w);   // to add an edge to graph
     bool isCyclic();    // returns true if there is a cycle in this graph
 };
 
@@ -410,8 +417,12 @@ bool ClassGraph::isCyclic()
 /*
 Code taken from
 https://www.geeksforgeeks.org/detect-cycle-in-a-graph/
+
+PASS THE MAPS IN BY REFERENCE
 */
-bool ClassTable::check_inheritance_graph_for_cycles(int num_classes, std::map<Symbol,int> symbol_to_class_index_map, std::map<Symbol,Symbol> child_to_parent_classmap)
+bool ClassTable::check_inheritance_graph_for_cycles(	int num_classes, 
+							std::map<Symbol,int> & symbol_to_class_index_map, 
+							std::map<Symbol,Symbol> & child_to_parent_classmap)
 {
 
     // Create a graph given in the above diagram
@@ -419,9 +430,12 @@ bool ClassTable::check_inheritance_graph_for_cycles(int num_classes, std::map<Sy
 
     for (std::map<Symbol, Symbol>::iterator it=child_to_parent_classmap.begin(); it!=child_to_parent_classmap.end(); ++it){
 	
+	// SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
+
 	int parent_idx = *( symbol_to_class_index_map.find( it->second ) );
 	int child_idx = *( symbol_to_class_index_map.find( it->first ) );
-        g.addEdge(parent_idx, child_idx);
+        std::cout << "Adding edge from " << parent_idx << " to " << child_idx << std::endl;
+	g.addEdge(parent_idx, child_idx);
    }
 
     if(g.isCyclic())
