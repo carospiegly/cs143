@@ -169,9 +169,9 @@ void ClassTable::verify_parent_classes_are_defined()
 	{
 		Class__class *curr_class = _classes->nth(i);
 		Symbol child_class_name = curr_class->get_name();
-		// account if no parent
 		Symbol parent_class_name = curr_class->get_parent();
-		if( _valid_classes.find(parent_class_name) == _valid_classes.end() )
+		// If it has no parent, parent is type Object
+		if( (parent_class_name!= Object) && ( _valid_classes.find(parent_class_name) == _valid_classes.end() ) )
 		{
 			_valid_classes.erase(child_class_name);
 			error_stream << "THROW ERROR! child inherits from an undefined class\n";
@@ -570,7 +570,7 @@ bool ClassTable::check_inheritance_graph_for_cycles()
     }
 }
 
-
+/*
    Symbol static_dispatch_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
@@ -781,3 +781,5 @@ Symbol new__class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
       // member variables are:
       // type_name, this
     }
+*/
+
