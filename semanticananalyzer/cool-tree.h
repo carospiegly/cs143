@@ -11,7 +11,9 @@
 
 #include "tree.h"
 #include "cool-tree.handcode.h"
-
+#include <symtab.h>
+#include <vector>
+#include <utility>
 
 // define the class for phylum
 // define simple phylum - Program
@@ -337,13 +339,15 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream, int n)
+   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
+			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
+			ostream& error_stream)
    {
       // typename, name
-      expr->get_type(symtab, mtab, stream);
+      expr->get_type(symtab, mtab, error_stream);
 
       for(int i = actual->first(); actual->more(i); i = actual->next(i))
-        actual->nth(i)->get_type(symtab, mtab, stream);
+        actual->nth(i)->get_type(symtab, mtab, error_stream);
 
    }
 
@@ -372,15 +376,17 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
-   {
-
-      expr->get_type(symtab, mtab, stream);
-
-      for(int i = actual->first(); actual->more(i); i = actual->next(i))
-        actual->nth(i)->get_type(symtab, mtab, stream);
-
-   }
+	Symbol get_type(SymbolTable<Symbol,Symbol> *symtab, 
+			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
+			ostream& error_stream)
+	{
+		expr->get_type(symtab, mtab, error_stream);
+		for(int i = actual->first(); actual->more(i); i = actual->next(i))
+		{
+			actual->nth(i)->get_type(symtab, mtab, error_stream);
+		}
+   	return name; // we should instead be returning last Symbol in "actual" 
+	}
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -428,14 +434,16 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
+   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
+			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
+			ostream& error_stream)
    {
-      if ( pred->get_type(symtab, mtab, stream)->get_type() != Bool )
+      if ( pred->get_type(symtab, mtab, error_stream)->get_type() != Bool )
       {
          stream << "You did not use a boolean predicate for the while loop";
       }
       // check if T2 is in the table!!
-      // body->get_type(symtab, mtab, stream);
+      // body->get_type(symtab, mtab, error_stream);
 
       type = Object;
    }
@@ -684,13 +692,15 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
+   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
+			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
+			ostream& error_stream)
    {
       // this
       
       if(! (
-            (e1-> get_type(symtab, mtab, stream)) == Int) 
-            && ((e2-> get_type(symtab, mtab, stream)) == Int)
+            (e1-> get_type(symtab, mtab, error_stream)) == Int) 
+            && ((e2-> get_type(symtab, mtab, error_stream)) == Int)
          ) {
          //error
       }
@@ -719,7 +729,9 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream, int n)
+   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
+			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
+			ostream& stream, int n)
    {
 
       Symbol T1 = e1->get_type( symtab, mtab, stream);
@@ -762,10 +774,12 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
+   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
+			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
+			ostream& error_stream)
    {
-      e1->get_type(symtab, mtab, stream);
-      e2->get_type(symtab, mtab, stream);
+      e1->get_type(symtab, mtab, error_stream);
+      e2->get_type(symtab, mtab, error_stream);
    }
 
 #ifdef Expression_SHARED_EXTRAS
@@ -788,9 +802,11 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(SymbolTable & symtab, MethodTable & mtab, ostream& stream)
+   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
+			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
+			ostream& error_stream)
    {
-      e1->get_type(symtab, mtab, stream);
+      e1->get_type(symtab, mtab, error_stream);
    }
 
 #ifdef Expression_SHARED_EXTRAS
@@ -853,14 +869,11 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(ostream& stream, int n)
+   Symbol get_type(ostream& error_stream)
    {
-      dump_line(stream,n,this);
-      stream << pad(n) << "_string\n";
-      stream << pad(n+2) << "\"";
+      // access this
       print_escaped_string(stream,token->get_string());
-      stream << "\"\n";
-      dump_type(stream,n);
+      return token; // how to return that it is a Symbol?
    }
 
 

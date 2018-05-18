@@ -9,6 +9,7 @@
 #include <list>
 #include <vector>
 #include <set>
+#include <utility>
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -98,9 +99,9 @@ static void initialize_constants(void)
 
 */
 ClassTable::ClassTable(Classes classes, 
-                        SymbolTable<Symbol,Symbol> & id_to_type_symtab,
-                        SymbolTableSymbolTable<std::pair(Symbol,Symbol),
-                                                std::vector<Symbol>> & method_table) : semant_errors(0) , 
+                        SymbolTable<Symbol,Symbol> *id_to_type_symtab,
+                        SymbolTable<std::pair<Symbol,Symbol>,
+                                                std::vector<Symbol> > *method_table) : semant_errors(0) , 
                                                                     error_stream(cerr) {
 
 
@@ -119,17 +120,18 @@ ClassTable::ClassTable(Classes classes,
 	// PASS 3 over the program
 	// keep global counter of how many classes we have seen so far, and this is the unique ID for each class
         std::map<Symbol,Symbol> child_to_parent_classmap;
-	populate_child_parent_and_unique_ID_maps(child_to_parent_classmap, symbol_to_class_index_map);
+	populate_child_parent_and_unique_ID_maps(valid_classes, child_to_parent_classmap, symbol_to_class_index_map);
 	// unique_class_idx holds the total number of classes
-	bool is_cyclic = check_inheritance_graph_for_cycles(unique_class_idx, symbol_to_class_index_map, child_to_parent_classmap );
+	bool is_cyclic = check_inheritance_graph_for_cycles(	symbol_to_class_index_map, 
+								child_to_parent_classmap );
 	// RETURN SOME VALUE return is_cyclic;
 
 }
 
 /*
-        // PASS 1
-        // make a set with all of the class names (not including the parent each is inherited from)
-        // the size of the set is how many classes we have seen so far
+   In PASS 1, we make a set with all of the class names 
+   (not including the parent each is inherited from).
+   The size of the set is how many classes we have seen so far.
 */
 std::set<Symbol> ClassTable::gather_valid_classes() 
 {
@@ -156,50 +158,25 @@ std::set<Symbol> ClassTable::gather_valid_classes()
 */
 void ClassTable::verify_parent_classes_defined(std::set<Symbol> & valid_classes)
 {
-    for(int i = classes->first(); classes->more(i); i = classes->next(i))
-    {
-        Class__class *curr_class = classes->nth(i);
-        Symbol child_class_name = curr_class->get_name();
-                // account if no parent
-        Symbol parent_class_name = curr_class->get_parent();
-                if( valid_classes.find(parent_class_name) == valid_classes.end() )
-                {
-                        valid_classes.erase(child_class_name);
-                        error_stream << "THROW ERROR! child inherits from an undefined class\n";
-                }
-        }
-}
-
-
-/* 
-	Add the methods of this class to the methodtable
-*/
-void ClassTable::add_class_methods_to_method_table(Class__class *curr_class, 
-					SymbolTable<std::pair(Symbol,Symbol),
-                                                std::vector<Symbol>> & method_table)
-{
-	list_node<Feature> *curr_features = curr_class->features;
-	for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
+	for(int i = classes->first(); classes->more(i); i = classes->next(i))
 	{
-		Feature_class *curr_feat = curr_features->nth(j);
-		// every feature is either a method, or an attribute
-		if (curr_feat->feat_is_method() ) // I am a method! ;
+		Class__class *curr_class = classes->nth(i);
+		Symbol child_class_name = curr_class->get_name();
+		// account if no parent
+		Symbol parent_class_name = curr_class->get_parent();
+		if( valid_classes.find(parent_class_name) == valid_classes.end() )
 		{
-			// key is (curr class, name of the method)
-			std::pair key = std::make_pair( child_class_name, curr_feat->get_name() );
-
-			// the value is the std::vector<Symbols>, all parameters and then return type
-			std::vector<Symbol> params_and_rt = curr_feat->get_params_and_rt();
-
-			// if its a method, then we need to add it to the method table
-			method_table->addid( key, params_and_rt );
+			valid_classes.erase(child_class_name);
+			error_stream << "THROW ERROR! child inherits from an undefined class\n";
 		}
 	}
 }
 
 
-void ClassTable::populate_child_parent_and_unique_ID_maps( std::map<Symbol,Symbol> & child_to_parent_classmap,
-								std::map<Symbol,int> & symbol_to_class_index_map)
+void ClassTable::populate_child_parent_and_unique_ID_maps( 	std::set<Symbol> & valid_classes,
+								std::map<Symbol,Symbol> & child_to_parent_classmap,
+								std::map<Symbol,int> & symbol_to_class_index_map,
+								SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table)
 {
         int unique_class_idx = 0;
 	for(int i = classes->first(); classes->more(i); i = classes->next(i))
@@ -220,10 +197,37 @@ void ClassTable::populate_child_parent_and_unique_ID_maps( std::map<Symbol,Symbo
 
                         // add the class to the symbol table
                         // add the methods of this class to the methodtable
-                        add_class_methods_to_method_table(curr_class, methodtable)
+                        add_class_methods_to_method_table(curr_class, method_table)
                 }
         }
 	// assert size of set is the same size as the number of unique classes
+	assert( unique_class_idx == valid_classes.size() );
+}
+
+
+/*
+        Add the methods of this class to the methodtable
+*/
+void ClassTable::add_class_methods_to_method_table(Class__class *curr_class,
+                                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table)
+{
+        list_node<Feature> *curr_features = curr_class->features;
+        for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
+        {
+                Feature_class *curr_feat = curr_features->nth(j);
+                // every feature is either a method, or an attribute
+                if (curr_feat->feat_is_method() ) // I am a method! ;
+                {
+                        // key is (curr class, name of the method)
+                        std::pair<Symbol,Symbol> key = std::make_pair( child_class_name, curr_feat->get_name() );
+
+                        // the value is the std::vector<Symbols>, all parameters and then return type
+                        std::vector<Symbol> params_and_rt = curr_feat->get_params_and_rt();
+
+                        // if its a method, then we need to add it to the method table
+                        method_table->addid( key, params_and_rt );
+                }
+        }
 }
 
 
@@ -388,9 +392,9 @@ void program_class::semant()
     SymbolTable<Symbol,Symbol> *id_to_type_symtab = new SymbolTable<Symbol,Symbol>();
 
     // method table is indexed by Class Symbol, Method Symbol
-    SymbolTable<std::pair(Symbol,Symbol),std::vector<Symbol>> method_table = 
-        new SymbolTable<std::pair(Symbol,Symbol),std::vector<Symbol>>();
-    method_table->
+    SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table = 
+        new SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> >();
+    method_table->enterscope();
 
     /* ClassTable constructor may do some semantic analysis */
     ClassTable *classtable = new ClassTable(classes, id_to_type_symtab, method_table);
@@ -400,7 +404,7 @@ void program_class::semant()
     // Perform all type checking
     for(int i = classes->first(); classes->more(i); i = classes->next(i))
     {
-        id_to_type_symtab->enter_scope();
+        id_to_type_symtab->enterscope();
 
         // add the attributes right here
         // // if its an attribute, then its a variable we need to add to the symbol table
@@ -413,8 +417,8 @@ void program_class::semant()
         
         Class__class *curr_class = classes->nth(i);
         // get down to the first expression of class
-        curr_class->get_type(id_to_type_symtab, method_table, stream );  
-        id_to_type_symtab->exit_scope(); 
+        curr_class->get_type(id_to_type_symtab, method_table, classtable->error_stream(curr_class) );  
+        id_to_type_symtab->exitscope(); 
     }
 
     // free the memory
