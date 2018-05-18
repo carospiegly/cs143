@@ -31,13 +31,13 @@ private:
   Classes _classes;
   std::set<Symbol> _valid_classes;
   std::map<Symbol,int> _symbol_to_class_index_map;
-  std::map<Symbol,Symbol> child_to_parent_classmap;
-  SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> > *method_table;
+  std::map<Symbol,Symbol> _child_to_parent_classmap;
+  SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> > *_method_table;
 
   int semant_errors;
   void install_basic_classes();
   bool check_inheritance_graph_for_cycles();
-  std::set<Symbol> gather_valid_classes();
+  void gather_valid_classes();
   void verify_parent_classes_are_defined();
   void add_class_methods_to_method_table(Class__class *curr_class);
   void populate_child_parent_and_unique_ID_maps();

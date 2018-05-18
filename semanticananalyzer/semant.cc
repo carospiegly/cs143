@@ -210,6 +210,7 @@ void ClassTable::populate_child_parent_and_unique_ID_maps()
 */
 void ClassTable::add_class_methods_to_method_table(Class__class *curr_class)
 {
+    Symbol curr_class_name = curr_class->get_name();
     list_node<Feature> *curr_features = curr_class->features;
     for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
     {
@@ -218,7 +219,7 @@ void ClassTable::add_class_methods_to_method_table(Class__class *curr_class)
         if (curr_feat->feat_is_method() ) // I am a method! ;
         {
             // key is (curr class, name of the method)
-            std::pair<Symbol,Symbol> key = std::make_pair( child_class_name, curr_feat->get_name() );
+            std::pair<Symbol,Symbol> key = std::make_pair( curr_class_name, curr_feat->get_name() );
 
             // the value is the std::vector<Symbols>, all parameters and then return type
             std::vector<Symbol> params_and_rt = curr_feat->get_params_and_rt();
