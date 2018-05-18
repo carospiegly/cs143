@@ -85,10 +85,10 @@ class Expression_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Expression(); }
    virtual Expression copy_Expression() = 0;
-   /*virtual Symbol type_check(	SymbolTable<Symbol,Symbol> *symtab,
-				SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+   virtual Symbol type_check(	SymbolTable<Symbol,Symbol> *symtab,
+				std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
 				ostream& error_stream) = 0;
-*/
+
 
 #ifdef Expression_EXTRAS
    Expression_EXTRAS
