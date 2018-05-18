@@ -33,6 +33,7 @@ private:
   std::map<Symbol,int> _symbol_to_class_index_map;
   std::map<Symbol,Symbol> _child_to_parent_classmap;
   SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> > *_method_table;
+  std::map<Symbol, Class_> _declared_classes_map;
 
   int semant_errors;
   void install_basic_classes();

@@ -54,6 +54,7 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
    virtual bool feat_is_method() = 0;
+   virtual Symbol get_name() = 0;
    virtual std::vector<Symbol> get_params_and_rt() = 0;
 
 #ifdef Feature_EXTRAS
@@ -201,12 +202,29 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
-
    bool feat_is_method()
    {
       return true;
    }
+   Symbol get_name()
+   {
+	return name;
+   }
 
+   /* We extract the Symbols from out of the formals list */
+   std::vector<Symbol> get_params_and_rt()
+   {
+      std::vector<Symbol> params_and_rt;
+      for(int i = formals->first(); formals->more(i); i = formals->next(i))
+      {
+         // we don't make a local variable of class "formal_class"
+         // because class is defined below ...
+         Symbol formal_type = formals->nth(i)->get_type_decl();
+         params_and_rt.push_back(formal_type);
+      }
+      params_and_rt.push_back(return_type);
+      return params_and_rt;
+   }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -236,6 +254,18 @@ public:
    {
       return false;
    }
+
+   Symbol get_name()
+   {
+        return name;
+   }
+
+   std::vector<Symbol> get_params_and_rt()
+   {
+	// attributes have no parameters or return type, so we return dummy value
+	std::vector<Symbol> empty_list;
+        return empty_list;
+   } 
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS

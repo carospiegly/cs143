@@ -11,6 +11,7 @@
 #include <set>
 #include <utility>
 #include "cool-tree.h"
+#include <iostream>
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -104,7 +105,9 @@ ClassTable::ClassTable(Classes classes) : 	_classes(classes),
                                             _symbol_to_class_index_map(),
                                             _child_to_parent_classmap(),
                                             _method_table(new SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> >() ),
-                                            semant_errors(0) , 
+					    _declared_classes_map(),   
+					/*_std::map Type -> Class_ that keeps track of all the declared classes, so Bool, Int, etc will have an entry there.*/
+	                                       semant_errors(0) , 
                                             error_stream(cerr)
 {
 	// walk through each of the classes in the class list of the program
@@ -223,7 +226,7 @@ void ClassTable::add_class_methods_to_method_table(Class__class *curr_class)
             std::pair<Symbol,Symbol> key = std::make_pair( curr_class_name, curr_feat->get_name() );
 
             // the value is the std::vector<Symbols>, all parameters and then return type
-            std::vector<Symbol> params_and_rt = curr_feat->get_params_and_rt();
+            std::vector<Symbol> *params_and_rt = new std::vector<Symbol>( curr_feat->get_params_and_rt() );
 
             // if its a method, then we need to add it to the method table
             _method_table->addid( key, params_and_rt );
@@ -339,6 +342,11 @@ void ClassTable::install_basic_classes() {
 	       filename);
 
 
+	_declared_classes_map.insert(std::make_pair( Object , Object_class));
+	_declared_classes_map.insert(std::make_pair( IO , IO_class));
+	_declared_classes_map.insert(std::make_pair( Int , Int_class));
+	_declared_classes_map.insert(std::make_pair( Bool , Bool_class));
+	_declared_classes_map.insert(std::make_pair( Str , Str_class));
 
 
 
@@ -419,7 +427,7 @@ void program_class::semant()
         
         Class__class *curr_class = classes->nth(i);
         // get down to the first expression of class
-        curr_class->get_type(id_to_type_symtab, method_table, classtable->error_stream(curr_class) );  
+        //curr_class->get_type(id_to_type_symtab, method_table, classtable->semant_error(curr_class) );  
         id_to_type_symtab->exitscope(); 
     }
 
@@ -565,7 +573,7 @@ bool ClassTable::check_inheritance_graph_for_cycles()
 
 
    /* We extract the Symbols from out of the formals list */
-   std::vector<Symbol> method_class::get_params_and_rt()
+   /*std::vector<Symbol> method_class::get_params_and_rt()
    {
       std::vector<Symbol> params_and_rt;
       for(int i = formals->first(); formals->more(i); i = formals->next(i))
@@ -578,7 +586,7 @@ bool ClassTable::check_inheritance_graph_for_cycles()
       params_and_rt.push_back(return_type);
       return params_and_rt;
    }
-
+*/
 
    Symbol static_dispatch_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
@@ -732,7 +740,7 @@ Symbol lt_class::get_type(   SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol eq_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
-                        ostream& stream, int n)
+                        ostream& stream)
    {
 
       Symbol T1 = e1->get_type( symtab, mtab, stream);
@@ -764,15 +772,17 @@ Symbol eq_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
    }
 
 
-   Symbol comp_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
-                        ostream& error_stream)
+   Symbol comp_class::get_type(	SymbolTable<Symbol,Symbol> *symtab,
+				SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+				ostream& error_stream)
    {
       e1->get_type(symtab, mtab, error_stream);
    }
 
 
-   Symbol string_const_class::get_type(ostream& error_stream)
+   Symbol string_const_class::get_type(	SymbolTable<Symbol,Symbol> *symtab,
+                        		SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        		ostream& error_stream)
    {
       // access this
       //print_escaped_string(stream,token->get_string());
@@ -781,9 +791,9 @@ Symbol eq_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-Symbol new__class::get_type(SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
-                        ostream& error_stream)
+Symbol new__class::get_type(	SymbolTable<Symbol,Symbol> *symtab,
+                        	SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        	ostream& error_stream)
    {
       // member variables are:
       // type_name, this
