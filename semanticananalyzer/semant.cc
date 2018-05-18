@@ -783,9 +783,9 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-   Symbol leq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
-                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+   Symbol leq_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
+                                    std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                    ostream& error_stream)
    {
       e1->type_check(symtab, method_map, error_stream);
       e2->type_check(symtab, method_map, error_stream);
@@ -794,8 +794,8 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 
    Symbol comp_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
-				std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-				ostream& error_stream)
+                                    std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                    ostream& error_stream)
    {
       e1->type_check(symtab, method_map, error_stream);
       return Bool;
@@ -803,8 +803,8 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 
    Symbol string_const_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
-                        		std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        		ostream& error_stream)
+                                            std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                            ostream& error_stream)
    {
       // access this
       //print_escaped_string(stream,token->get_string());
@@ -813,13 +813,120 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-Symbol new__class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
-                        	std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        	ostream& error_stream)
+Symbol new__class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
+                                std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                ostream& error_stream)
    {
       // member variables are:
       // type_name, this
       return Object; // CHANGE THIS TO TYPE
     }
+
+
+
+Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
+                                    std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                    ostream& error_stream)
+{
+    type = Object;
+    return type;
+}
+
+
+
+// void bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
+//                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+//                                     ostream& error_stream)
+// {
+//    dump_line(stream,n,this);
+//    stream << pad(n) << "_bool\n";
+//    dump_Boolean(stream, n+2, val);
+//    dump_type(stream,n);
+// }
+
+
+
+// void int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
+//                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+//                                     ostream& error_stream)
+// {
+//    dump_line(stream,n,this);
+//    stream << pad(n) << "_int\n";
+//    dump_Symbol(stream, n+2, token);
+//    dump_type(stream,n);
+// }
+
+
+// void let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
+//                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+//                             ostream& error_stream)
+// {
+//    dump_line(stream,n,this);
+//    stream << pad(n) << "_let\n";
+//    dump_Symbol(stream, n+2, identifier);
+//    dump_Symbol(stream, n+2, type_decl);
+//    init->dump_with_types(stream, n+2);
+//    body->dump_with_types(stream, n+2);
+//    dump_type(stream,n);
+// }
+
+
+
+// void block_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
+//                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+//                                 ostream& error_stream)
+// {
+//    dump_line(stream,n,this);
+//    stream << pad(n) << "_block\n";
+//    for(int i = body->first(); body->more(i); i = body->next(i))
+//      body->nth(i)->dump_with_types(stream, n+2);
+//    dump_type(stream,n);
+// }
+
+
+
+// void typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
+//                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+//                                 ostream& error_stream)
+// {
+//    dump_line(stream,n,this);
+//    stream << pad(n) << "_typcase\n";
+//    expr->dump_with_types(stream, n+2);
+//    for(int i = cases->first(); cases->more(i); i = cases->next(i))
+//      cases->nth(i)->dump_with_types(stream, n+2);
+//    dump_type(stream,n);
+// }
+
+
+
+void cond_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
+                            std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                            ostream& error_stream)
+{
+
+    if ( !(pred->type_check(symtab, method_map, error_stream) == Bool) )
+    {
+        error_stream << "You use a conditional (if/then/else) without a boolean predicate";
+    }
+    then_exp->type_check(symtab, method_map, error_stream);
+    else_exp->type_check(symtab, method_map, error_stream);
+    // Find the LEAST UPPER BOUND OF THESE LAST TWO
+    return Object; // CHANGE THIS, IT'S WRONG
+}
+
+
+void assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
+                                std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                ostream& error_stream)
+{
+    // WE SHOULD BE RETURNING SOME SUBTYPE THING
+    return expr->type_check(symtab, method_map, error_stream);
+}
+
+
+
+
+
+
 
 
