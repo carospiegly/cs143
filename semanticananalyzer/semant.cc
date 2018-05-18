@@ -920,9 +920,9 @@ Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
 {
 
 
-   expr->type_check(symtab, method_map, error_stream);
-   for(int i = cases->first(); cases->more(i); i = cases->next(i))
-     cases->nth(i)->type_check(symtab, method_map, error_stream);
+   // expr->type_check(symtab, method_map, error_stream);
+   // for(int i = cases->first(); cases->more(i); i = cases->next(i))
+   //   cases->nth(i)->type_check(symtab, method_map, error_stream);
     return Object; // FIX THIS, THIS IS WRONG
 }
 
