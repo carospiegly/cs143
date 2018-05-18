@@ -55,6 +55,7 @@ public:
    virtual Feature copy_Feature() = 0;
    virtual bool feat_is_method() = 0;
    virtual Symbol get_name() = 0;
+   virtual Symbol* get_type_decl() = 0;
    virtual std::vector<Symbol> get_params_and_rt() = 0;
 
 #ifdef Feature_EXTRAS
@@ -178,6 +179,7 @@ public:
 	return features;
    }
 
+
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS
 #endif
@@ -211,7 +213,8 @@ public:
    {
 	return name;
    }
-
+     Symbol *get_type_decl();
+  
    /* We extract the Symbols from out of the formals list */
    std::vector<Symbol> get_params_and_rt()
    {
@@ -259,6 +262,10 @@ public:
    Symbol get_name()
    {
         return name;
+   }
+   Symbol* get_type_decl()
+   {
+        return &type_decl;
    }
 
    std::vector<Symbol> get_params_and_rt()
