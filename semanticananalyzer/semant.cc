@@ -395,7 +395,7 @@ void program_class::semant()
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
-    ClassTable *classtable = new ClassTable(classes, id_to_type_symtab, method_table);
+    ClassTable *classtable = new ClassTable(classes);
 
     SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table = 
         classtable->get_method_table();
