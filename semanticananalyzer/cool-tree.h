@@ -103,6 +103,9 @@ class Case_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Case(); }
    virtual Case copy_Case() = 0;
+   virtual Symbol type_check( SymbolTable<Symbol,Symbol> *symtab,
+         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+         ostream& error_stream) = 0;
 
 #ifdef Case_EXTRAS
    Case_EXTRAS

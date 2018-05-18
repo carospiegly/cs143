@@ -949,14 +949,27 @@ Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                 ostream& error_stream)
 {
+    
+    // expr->type_check(symtab, method_map, error_stream);
     // WE SHOULD BE RETURNING SOME SUBTYPE THING
-    return expr->type_check(symtab, method_map, error_stream);
+    type = Object;  // FIX THIS LATER, ITS WRONG
+    return type;
 }
 
 
 
 
+Symbol branch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
+                                std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                ostream& error_stream)
+{
 
+    // name
+   // type_decl
+   expr->type_check(symtab, method_map, error_stream);
+   type = Object; // FIX THIS LATER, ITS WRONG
+   return type;
+}
 
 
 
