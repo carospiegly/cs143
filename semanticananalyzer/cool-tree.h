@@ -14,6 +14,7 @@
 #include <symtab.h>
 #include <vector>
 #include <utility>
+#include "semant.h"
 
 // define the class for phylum
 // define simple phylum - Program
@@ -65,7 +66,7 @@ class Formal_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
-
+   virtual Symbol get_type_decl() = 0;
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
 #endif
@@ -79,6 +80,9 @@ class Expression_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Expression(); }
    virtual Expression copy_Expression() = 0;
+   virtual Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab,
+				SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+				ostream& error_stream) = 0;
 
 #ifdef Expression_EXTRAS
    Expression_EXTRAS
@@ -193,21 +197,6 @@ public:
    bool feat_is_method()
    {
       return true;
-   }
-
-   std::vector<Symbol> get_params_and_rt()
-   {
-      std::vector<Symbol> params_and_rt;
-      // get the Symbols out of the formals
-
-      for(int i = formals->first(); formals->more(i); i = formals->next(i))
-      {
-         formal_class *curr_formal = formals->nth(i);
-         Symbol formal_type = curr_formal->get_type_decl();
-         params_and_rt.push_back( formal_type );
-      }
-      params_and_rt.push_back( return_type );
-      return params_and_rt;
    }
 
 
@@ -339,19 +328,6 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
-			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
-			ostream& error_stream)
-   {
-      // typename, name
-      expr->get_type(symtab, mtab, error_stream);
-
-      for(int i = actual->first(); actual->more(i); i = actual->next(i))
-        actual->nth(i)->get_type(symtab, mtab, error_stream);
-
-   }
-
-
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -376,17 +352,6 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-	Symbol get_type(SymbolTable<Symbol,Symbol> *symtab, 
-			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
-			ostream& error_stream)
-	{
-		expr->get_type(symtab, mtab, error_stream);
-		for(int i = actual->first(); actual->more(i); i = actual->next(i))
-		{
-			actual->nth(i)->get_type(symtab, mtab, error_stream);
-		}
-   	return name; // we should instead be returning last Symbol in "actual" 
-	}
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -433,20 +398,6 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-
-   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
-			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
-			ostream& error_stream)
-   {
-      if ( pred->get_type(symtab, mtab, error_stream)->get_type() != Bool )
-      {
-         stream << "You did not use a boolean predicate for the while loop";
-      }
-      // check if T2 is in the table!!
-      // body->get_type(symtab, mtab, error_stream);
-
-      type = Object;
-   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -537,17 +488,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   Symbol get_type()
-   {
-    
-      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
-         //error
-
-      }
-      
-      type = Int; 
-
-   }
+   
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -569,16 +510,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
- Symbol get_type()
-   {
-    
-      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
-         //error
-      }
-      
-      type = Int; 
 
-   }
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -600,16 +533,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
- Symbol get_type()
-   {
     
-      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
-         //error
-      }
-      
-      type = Int; 
-
-   }
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -631,16 +555,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
- Symbol get_type()
-   {
-    
-      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
-         //error
-      }
-      
-      type = Int; 
 
-   }
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -660,16 +575,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
- Symbol get_type()
-   {
-    
-      if(! (e1-> get_type()) == Int){
-         //error
-      }
-      
-      type = Int; 
-
-   }
+   
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -691,21 +597,6 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-
-   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
-			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
-			ostream& error_stream)
-   {
-      // this
-      
-      if(! (
-            (e1-> get_type(symtab, mtab, error_stream)) == Int) 
-            && ((e2-> get_type(symtab, mtab, error_stream)) == Int)
-         ) {
-         //error
-      }
-      type = Bool; 
-   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -729,29 +620,6 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
-			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
-			ostream& stream, int n)
-   {
-
-      Symbol T1 = e1->get_type( symtab, mtab, stream);
-      Symbol T2 = e2->get_type( symtab, mtab, stream);
-      if ( ((T1 == Bool) && (T2 != Bool)) || ((T2 == Bool) && (T1 != Bool)) ){
-         stream << "You tried to check different types for equality v bad";
-      }
-      if ( ((T1 == Integer) && (T2 != Integer)) || ((T2 == Integer) && (T1 != Integer)) )
-      {
-         stream << "You tried to check different types for equality v bad";
-      }
-      if ( ((T1 == String) && (T2 != String)) || ((T2 == String) && (T1 != String)) )
-      {
-         stream << "You tried to check different types for equality v bad";
-      }
-      type = Bool;
-   }
-
-
-
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -774,14 +642,6 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
-			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
-			ostream& error_stream)
-   {
-      e1->get_type(symtab, mtab, error_stream);
-      e2->get_type(symtab, mtab, error_stream);
-   }
-
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -801,13 +661,6 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-
-   Symbol get_type(	SymbolTable<Symbol,Symbol> *symtab, 
-			SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab, 
-			ostream& error_stream)
-   {
-      e1->get_type(symtab, mtab, error_stream);
-   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -869,14 +722,6 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(ostream& error_stream)
-   {
-      // access this
-      print_escaped_string(stream,token->get_string());
-      return token; // how to return that it is a Symbol?
-   }
-
-
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -896,12 +741,6 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-
-   Symbol get_type(ostream& stream)
-   {
-      // member variables are:
-      // type_name, this
-    }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -923,10 +762,6 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type(ostream& stream)
-   {
-      e1->get_type(stream);
-   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -946,10 +781,6 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
-   Symbol get_type()
-   {
-      // can use "this" if needed
-   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
