@@ -98,32 +98,29 @@ static void initialize_constants(void)
    "Class_" is a type def for :typedef class Class__class *Class_"
 
 */
-ClassTable::ClassTable(Classes classes, 
-                        SymbolTable<Symbol,Symbol> *id_to_type_symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,
-                                                std::vector<Symbol> > *method_table) : semant_errors(0) , 
-                                                                    error_stream(cerr) {
-
-
-
-
+ClassTable::ClassTable(Classes classes) : 	_classes(classes), 
+						semant_errors(0) , 
+						error_stream(cerr)
+{
 	// walk through each of the classes in the class list of the program
 	//list_node<Class__class *> class_deep_copy = classes->copy_list(); // make a deep copy. We might need to modify it as we go???	
 
 	// PASS 1 -- make a set with all of the class names (not including the parent each is inherited from)
-	std::set<Symbol> valid_classes = gather_valid_classes();
+	gather_valid_classes();
 
 	// PASS 2 -- MAKE SURE THAT EACH CLASS THAT WAS INHERITED FROM WAS REAL
-	verify_parent_classes_are_defined(valid_classes);
-	
-	std::map<Symbol,int> symbol_to_class_index_map;
+	verify_parent_classes_are_defined();
+
 	// PASS 3 over the program
 	// keep global counter of how many classes we have seen so far, and this is the unique ID for each class
-        std::map<Symbol,Symbol> child_to_parent_classmap;
-	populate_child_parent_and_unique_ID_maps(valid_classes, child_to_parent_classmap, symbol_to_class_index_map);
+	populate_child_parent_and_unique_ID_maps(); 
+	
 	// unique_class_idx holds the total number of classes
-	bool is_cyclic = check_inheritance_graph_for_cycles(	symbol_to_class_index_map, 
-								child_to_parent_classmap );
+	bool is_cyclic = check_inheritance_graph_for_cycles();
+	if (is_cyclic)
+	{
+		error_stream << "THROW ERROR! Graph is cyclic";
+	}
 	// RETURN SOME VALUE return is_cyclic;
 
 }
@@ -156,7 +153,7 @@ std::set<Symbol> ClassTable::gather_valid_classes()
         // PASS 2 MAKE SURE THAT EACH CLASS THAT WAS INHERITED FROM WAS REAL
     // decremenet the size of the set (total number of classes) if any of them were fake
 */
-void ClassTable::verify_parent_classes_defined(std::set<Symbol> & valid_classes)
+void ClassTable::verify_parent_classes_are_defined()
 {
 	for(int i = classes->first(); classes->more(i); i = classes->next(i))
 	{

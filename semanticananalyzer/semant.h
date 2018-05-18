@@ -26,6 +26,14 @@ typedef ClassTable *ClassTableP;
 
 class ClassTable {
 private:
+
+  /* PRIVATE MEMBER VARIABLES */
+  Classes _classes;
+  std::set<Symbol> _valid_classes;
+  std::map<Symbol,int> _symbol_to_class_index_map;
+  std::map<Symbol,Symbol> child_to_parent_classmap;
+  SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> > *method_table;
+
   int semant_errors;
   void install_basic_classes();
   bool check_inheritance_graph_for_cycles();
@@ -33,7 +41,7 @@ private:
 					std::map<Symbol,int> & symbol_to_class_index_map, 
 					std::map<Symbol,Symbol> & child_to_parent_classmap);
   std::set<Symbol> gather_valid_classes();
-  void verify_parent_classes_defined(std::set<Symbol> & valid_classes);
+  void verify_parent_classes_are_defined(std::set<Symbol> & valid_classes);
   void add_class_methods_to_method_table(Class__class *curr_class,
                                         SymbolTable<std::pair<Symbol,Symbol> *,
                                         std::vector<Symbol> > & method_table);
@@ -42,7 +50,6 @@ private:
                                                 std::map<Symbol,int>  & symbol_to_class_index_map,
 						SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table);
   ostream& error_stream;
-
 public:
   ClassTable(Classes, 
 		SymbolTable<Symbol,Symbol> *id_to_type_symtab,
