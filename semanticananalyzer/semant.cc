@@ -193,8 +193,8 @@ void ClassTable::populate_child_parent_and_unique_ID_maps()
         {
 	    _declared_classes_map.insert(std::make_pair(child_class_name, curr_class));
             // besides acyclicity, we can say this class is legit bc it persisted in the valid classes set
-            // SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
-            if (parent_class_name != NULL)
+            // if this class does not inherit from anybody, do not record it having any parent
+            if (parent_class_name != Object)
             {
                     _child_to_parent_classmap.insert(std::make_pair(child_class_name, parent_class_name ));
             }
