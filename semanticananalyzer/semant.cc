@@ -228,7 +228,7 @@ void ClassTable::add_class_methods_to_method_map(Class__class *curr_class)
             std::pair<Symbol,Symbol> key = std::make_pair( curr_class_name, curr_feat->get_name() );
 
             // the value is the std::vector<Symbols>, all parameters and then return type
-            std::vector<Symbol> *params_and_rt = new std::vector<Symbol>( curr_feat->get_params_and_rt() );
+            std::vector<Symbol> params_and_rt = std::vector<Symbol>( curr_feat->get_params_and_rt() );
 
             // if its a method, then we need to add it to the method table
             _method_map.insert(std::make_pair( key, params_and_rt ));
@@ -754,6 +754,7 @@ Symbol lt_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
       }
 
       type = Bool;
+      return type;
    }
 
 
@@ -797,6 +798,7 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 				ostream& error_stream)
    {
       e1->type_check(symtab, method_map, error_stream);
+      return Bool;
    }
 
 
