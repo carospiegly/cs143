@@ -38,6 +38,7 @@ class Class__class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Class_(); }
    virtual Class_ copy_Class_() = 0;
+   virtual Features get_features() = 0;
 
 #ifdef Class__EXTRAS
    Class__EXTRAS
@@ -52,6 +53,8 @@ class Feature_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
+   virtual bool feat_is_method() = 0;
+   virtual std::vector<Symbol> get_params_and_rt() = 0;
 
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -167,6 +170,11 @@ public:
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
+
+   Features get_features()
+   {
+	return features;
+   }
 
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS

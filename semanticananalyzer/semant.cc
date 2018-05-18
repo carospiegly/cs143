@@ -10,6 +10,7 @@
 #include <vector>
 #include <set>
 #include <utility>
+#include "cool-tree.h"
 
 extern int semant_debug;
 extern char *curr_filename;
@@ -211,7 +212,7 @@ void ClassTable::populate_child_parent_and_unique_ID_maps()
 void ClassTable::add_class_methods_to_method_table(Class__class *curr_class)
 {
     Symbol curr_class_name = curr_class->get_name();
-    list_node<Feature> *curr_features = curr_class->features;
+    list_node<Feature> *curr_features = curr_class->get_features();
     for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
     {
         Feature_class *curr_feat = curr_features->nth(j);
