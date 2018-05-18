@@ -813,7 +813,7 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                     ostream& error_stream)
    {
-      if(! (((e1-> type_check()) == Int) && ((e2 -> type_check()) == Int))){
+      if(! (((e1-> type_check(symtab,method_map,error_stream)) == Int) && ((e2 -> type_check(symtab,method_map,error_stream)) == Int))){
          error_stream << "Attempted to compare two non-integers";
       }
       type = Bool;
@@ -890,11 +890,10 @@ Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                             ostream& error_stream)
 {
 
-   stream << pad(n) << "_let\n";
    // identifier
    // type_decl
-   init->dump_with_types(stream, n+2);
-   body->dump_with_types(stream, n+2);
+   init->type_check(symtab, method_map, error_stream);
+   body->type_check(symtab, method_map, error_stream);
 
    type = Object; // FIX THIS, IT'S WRONG
    return type;
@@ -907,7 +906,7 @@ Symbol block_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                                 ostream& error_stream)
 {
    for(int i = body->first(); body->more(i); i = body->next(i))
-     body->nth(i)->dump_with_types(stream, n+2);
+     body->nth(i)->type_check(symtab, method_map, error_stream);
 
     // type of a block is the value of the last expression
     return Object; // FIX THIS, IT'S WRONG
@@ -921,9 +920,9 @@ Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
 {
 
 
-   expr->dump_with_types(stream, n+2);
+   expr->type_check(symtab, method_map, error_stream);
    for(int i = cases->first(); cases->more(i); i = cases->next(i))
-     cases->nth(i)->dump_with_types(stream, n+2);
+     cases->nth(i)->type_check(symtab, method_map, error_stream);
     return Object; // FIX THIS, THIS IS WRONG
 }
 
