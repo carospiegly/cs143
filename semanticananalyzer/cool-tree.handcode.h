@@ -89,11 +89,15 @@ void dump_with_types(ostream&,int);
 
 
 #define Case_EXTRAS                             \
-virtual void dump_with_types(ostream& ,int) = 0;
+virtual void dump_with_types(ostream& ,int) = 0; \
+Symbol type_check(SymbolTable<Symbol,Symbol> *symtab, std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map, ostream& error_stream);
+
 
 
 #define branch_EXTRAS                                   \
-void dump_with_types(ostream& ,int);
+void dump_with_types(ostream& ,int); \
+Symbol type_check(SymbolTable<Symbol,Symbol> *symtab, std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map, ostream& error_stream);
+
 
 
 #define Expression_EXTRAS                    \
