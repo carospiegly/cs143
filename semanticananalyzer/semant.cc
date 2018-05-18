@@ -147,7 +147,7 @@ void ClassTable::gather_valid_classes()
             if( _valid_classes.find(curr_class_name) == _valid_classes.end() )
             {
                     // does not exist in the map yet
-                    valid_classes.insert( curr_class_name );
+                    _valid_classes.insert( curr_class_name );
             } else {
                     error_stream << "THROW ERROR! CLASS DEFINED TWICE\n" ;
             }
@@ -201,7 +201,7 @@ void ClassTable::populate_child_parent_and_unique_ID_maps()
         }
     }
 	// assert size of set is the same size as the number of unique classes
-	assert( unique_class_idx == _valid_classes.size() );
+	assert( unique_class_idx == (int)_valid_classes.size() );
 }
 
 
@@ -416,16 +416,18 @@ void program_class::semant()
         id_to_type_symtab->exitscope(); 
     }
 
-    // free the memory
-    delete id_to_type_symtab;
-    delete method_table;
 
     /* some semantic analysis code may go here */
     
     if (classtable->errors()) {
-	cerr << "Compilation halted due to static semantic errors." << endl;
-	exit(1);
+	   cerr << "Compilation halted due to static semantic errors." << endl;
+	   exit(1);
     }
+
+    // free the memory
+    delete id_to_type_symtab;
+    delete classtable; // automatically frees the method table
+
 }
 
 
