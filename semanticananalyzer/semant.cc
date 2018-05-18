@@ -419,7 +419,7 @@ void program_class::semant()
         id_to_type_symtab->enterscope();
 
         Class__class *curr_class = classes->nth(i);
-        
+/*        
         //for each class, add attributes of inherited classes 
         Class_class *parent = (classtable->get_child_map()).find(curr_class);
 
@@ -451,7 +451,7 @@ void program_class::semant()
          } 
      }
  }
-        //TYPE CHECK HERE
+  */      //TYPE CHECK HERE
         // get down to the first expression of class
         //curr_class->type_check(id_to_type_symtab, method_table, classtable->semant_error(curr_class) );  
         id_to_type_symtab->exitscope(); 
@@ -596,7 +596,7 @@ bool ClassTable::check_inheritance_graph_for_cycles()
     }
 }
 
-/*
+
    Symbol static_dispatch_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
@@ -807,5 +807,5 @@ Symbol new__class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
       // member variables are:
       // type_name, this
     }
-*/
+
 
