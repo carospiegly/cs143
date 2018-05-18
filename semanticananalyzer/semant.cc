@@ -99,11 +99,18 @@ static void initialize_constants(void)
 
 */
 ClassTable::ClassTable(Classes classes) : 	_classes(classes), 
-						semant_errors(0) , 
-						error_stream(cerr)
+                                            _valid_classes(),
+                                            _symbol_to_class_index_map(),
+                                            _child_to_parent_classmap(),
+                                            _method_table(new SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> >() ),
+                                            semant_errors(0) , 
+                                            error_stream(cerr)
 {
 	// walk through each of the classes in the class list of the program
 	//list_node<Class__class *> class_deep_copy = classes->copy_list(); // make a deep copy. We might need to modify it as we go???	
+
+    // method table is indexed by Class Symbol, Method Symbol
+    _method_table->enterscope();
 
 	// PASS 1 -- make a set with all of the class names (not including the parent each is inherited from)
 	gather_valid_classes();
@@ -130,23 +137,22 @@ ClassTable::ClassTable(Classes classes) : 	_classes(classes),
    (not including the parent each is inherited from).
    The size of the set is how many classes we have seen so far.
 */
-std::set<Symbol> ClassTable::gather_valid_classes() 
+void ClassTable::gather_valid_classes() 
 {
-        std::set<Symbol> valid_classes = gather_valid_classes();
-        // in what cases would this not be equal to classes.len()?
-        for(int i = classes->first(); classes->more(i); i = classes->next(i))
-        {
-                Class__class *curr_class = classes->nth(i);
-                Symbol curr_class_name = curr_class->get_name();
-                if(valid_classes.find(curr_class_name) == valid_classes.end() )
-                {
-                        // does not exist in the map yet
-                        valid_classes.insert( curr_class_name );
-                } else {
-                        error_stream << "THROW ERROR! CLASS DEFINED TWICE\n" ;
-                }
-        }
-	return valid_classes;
+    // in what cases would this not be equal to classes.len()?
+    for(int i = _classes->first(); _classes->more(i); i = _classes->next(i))
+    {
+            Class__class *curr_class = _classes->nth(i);
+            Symbol curr_class_name = curr_class->get_name();
+            if( _valid_classes.find(curr_class_name) == _valid_classes.end() )
+            {
+                    // does not exist in the map yet
+                    valid_classes.insert( curr_class_name );
+            } else {
+                    error_stream << "THROW ERROR! CLASS DEFINED TWICE\n" ;
+            }
+    }
+
 }
 
 /*
@@ -155,76 +161,72 @@ std::set<Symbol> ClassTable::gather_valid_classes()
 */
 void ClassTable::verify_parent_classes_are_defined()
 {
-	for(int i = classes->first(); classes->more(i); i = classes->next(i))
+	for(int i = _classes->first(); _classes->more(i); i = _classes->next(i))
 	{
-		Class__class *curr_class = classes->nth(i);
+		Class__class *curr_class = _classes->nth(i);
 		Symbol child_class_name = curr_class->get_name();
 		// account if no parent
 		Symbol parent_class_name = curr_class->get_parent();
-		if( valid_classes.find(parent_class_name) == valid_classes.end() )
+		if( _valid_classes.find(parent_class_name) == _valid_classes.end() )
 		{
-			valid_classes.erase(child_class_name);
+			_valid_classes.erase(child_class_name);
 			error_stream << "THROW ERROR! child inherits from an undefined class\n";
 		}
 	}
 }
 
 
-void ClassTable::populate_child_parent_and_unique_ID_maps( 	std::set<Symbol> & valid_classes,
-								std::map<Symbol,Symbol> & child_to_parent_classmap,
-								std::map<Symbol,int> & symbol_to_class_index_map,
-								SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table)
+void ClassTable::populate_child_parent_and_unique_ID_maps()
 {
-        int unique_class_idx = 0;
-	for(int i = classes->first(); classes->more(i); i = classes->next(i))
+    int unique_class_idx = 0;
+	for(int i = _classes->first(); _classes->more(i); i = _classes->next(i))
+    {
+        Class__class *curr_class = _classes->nth(i);
+        Symbol child_class_name = curr_class->get_name();
+        Symbol parent_class_name = curr_class->get_parent();
+        if( _valid_classes.find(child_class_name) != _valid_classes.end() )
         {
-                Class__class *curr_class = classes->nth(i);
-                Symbol child_class_name = curr_class->get_name();
-                Symbol parent_class_name = curr_class->get_parent();
-                if( valid_classes.find(child_class_name) != valid_classes.end() )
-                {
-                        // besides acyclicity, we can say this class is legit bc it persisted in the valid classes set
-                        // SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
-                        if (parent_class_name != NULL)
-                        {
-                                child_to_parent_classmap.insert(std::make_pair(child_class_name, parent_class_name ));
-                        }
-                        symbol_to_class_index_map.insert(std::make_pair(child_class_name,unique_class_idx));
-                        unique_class_idx++;
+            // besides acyclicity, we can say this class is legit bc it persisted in the valid classes set
+            // SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
+            if (parent_class_name != NULL)
+            {
+                    _child_to_parent_classmap.insert(std::make_pair(child_class_name, parent_class_name ));
+            }
+            _symbol_to_class_index_map.insert(std::make_pair(child_class_name,unique_class_idx));
+            unique_class_idx++;
 
-                        // add the class to the symbol table
-                        // add the methods of this class to the methodtable
-                        add_class_methods_to_method_table(curr_class, method_table)
-                }
+            // add the class to the symbol table
+            // add the methods of this class to the methodtable
+            add_class_methods_to_method_table(curr_class);
         }
+    }
 	// assert size of set is the same size as the number of unique classes
-	assert( unique_class_idx == valid_classes.size() );
+	assert( unique_class_idx == _valid_classes.size() );
 }
 
 
 /*
         Add the methods of this class to the methodtable
 */
-void ClassTable::add_class_methods_to_method_table(Class__class *curr_class,
-                                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table)
+void ClassTable::add_class_methods_to_method_table(Class__class *curr_class)
 {
-        list_node<Feature> *curr_features = curr_class->features;
-        for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
+    list_node<Feature> *curr_features = curr_class->features;
+    for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
+    {
+        Feature_class *curr_feat = curr_features->nth(j);
+        // every feature is either a method, or an attribute
+        if (curr_feat->feat_is_method() ) // I am a method! ;
         {
-                Feature_class *curr_feat = curr_features->nth(j);
-                // every feature is either a method, or an attribute
-                if (curr_feat->feat_is_method() ) // I am a method! ;
-                {
-                        // key is (curr class, name of the method)
-                        std::pair<Symbol,Symbol> key = std::make_pair( child_class_name, curr_feat->get_name() );
+            // key is (curr class, name of the method)
+            std::pair<Symbol,Symbol> key = std::make_pair( child_class_name, curr_feat->get_name() );
 
-                        // the value is the std::vector<Symbols>, all parameters and then return type
-                        std::vector<Symbol> params_and_rt = curr_feat->get_params_and_rt();
+            // the value is the std::vector<Symbols>, all parameters and then return type
+            std::vector<Symbol> params_and_rt = curr_feat->get_params_and_rt();
 
-                        // if its a method, then we need to add it to the method table
-                        method_table->addid( key, params_and_rt );
-                }
+            // if its a method, then we need to add it to the method table
+            _method_table->addid( key, params_and_rt );
         }
+    }
 }
 
 
@@ -385,16 +387,12 @@ void program_class::semant()
 {
     initialize_constants();
 
-
-    SymbolTable<Symbol,Symbol> *id_to_type_symtab = new SymbolTable<Symbol,Symbol>();
-
-    // method table is indexed by Class Symbol, Method Symbol
-    SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table = 
-        new SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> >();
-    method_table->enterscope();
-
     /* ClassTable constructor may do some semantic analysis */
     ClassTable *classtable = new ClassTable(classes, id_to_type_symtab, method_table);
+
+    SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table = 
+        classtable.get_method_table();
+    SymbolTable<Symbol,Symbol> *id_to_type_symtab = new SymbolTable<Symbol,Symbol>();
 
     // WE LOOP THROUGH IN TERMS OF CLASS HIERARCHY! NOT IN TERMS OF PROGRAM ORDER
 
@@ -410,7 +408,6 @@ void program_class::semant()
         //     /* is attribute */
         //     id_to_type_symtab->addid( curr_feat->get_name(), get_type_decl() );
         // } 
-
         
         Class__class *curr_class = classes->nth(i);
         // get down to the first expression of class
@@ -528,21 +525,19 @@ https://www.geeksforgeeks.org/detect-cycle-in-a-graph/
 
 PASS THE MAPS IN BY REFERENCE
 */
-bool ClassTable::check_inheritance_graph_for_cycles(	int num_classes, 
-							std::map<Symbol,int> & symbol_to_class_index_map, 
-							std::map<Symbol,Symbol> & child_to_parent_classmap)
+bool ClassTable::check_inheritance_graph_for_cycles()
 {
-
+    int num_classes = _valid_classes.size();
     // Create a graph given in the above diagram
     ClassGraph g(num_classes);
 
-    for (std::map<Symbol, Symbol>::iterator it=child_to_parent_classmap.begin(); it!=child_to_parent_classmap.end(); ++it){
+    for (std::map<Symbol, Symbol>::iterator it=_child_to_parent_classmap.begin(); it!=_child_to_parent_classmap.end(); ++it){
 	
 	// SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
 	Symbol parent_class_name = it->second;
 	Symbol child_class_name = it->first;
-	int parent_idx = symbol_to_class_index_map.find( parent_class_name )->second;
-	int child_idx = symbol_to_class_index_map.find( child_class_name )->second;
+	int parent_idx = _symbol_to_class_index_map.find( parent_class_name )->second;
+	int child_idx = _symbol_to_class_index_map.find( child_class_name )->second;
         std::cout << "Adding edge from " << parent_idx << " to " << child_idx << std::endl;
 	g.addEdge(parent_idx, child_idx);
    }
