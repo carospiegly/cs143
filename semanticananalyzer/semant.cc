@@ -970,4 +970,10 @@ Symbol branch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 }
 
 
+Symbol static_dispatch_class :: least_upper_bound (Symbol symbol1, Symbol symbol2){
 
+
+ 
+
+
+}
