@@ -834,72 +834,70 @@ Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-// void bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
-//                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-//                                     ostream& error_stream)
-// {
-//    dump_line(stream,n,this);
-//    stream << pad(n) << "_bool\n";
-//    dump_Boolean(stream, n+2, val);
-//    dump_type(stream,n);
-// }
+void bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
+                                    std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                    ostream& error_stream)
+{
+    type = Bool;
+    return type;
+}
 
 
 
-// void int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
-//                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-//                                     ostream& error_stream)
-// {
-//    dump_line(stream,n,this);
-//    stream << pad(n) << "_int\n";
-//    dump_Symbol(stream, n+2, token);
-//    dump_type(stream,n);
-// }
+void int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
+                                    std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                    ostream& error_stream)
+{
+    type = Int;
+    return type;
+}
 
 
-// void let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
-//                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-//                             ostream& error_stream)
-// {
-//    dump_line(stream,n,this);
-//    stream << pad(n) << "_let\n";
-//    dump_Symbol(stream, n+2, identifier);
-//    dump_Symbol(stream, n+2, type_decl);
-//    init->dump_with_types(stream, n+2);
-//    body->dump_with_types(stream, n+2);
-//    dump_type(stream,n);
-// }
+Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
+                            std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                            ostream& error_stream)
+{
 
+   stream << pad(n) << "_let\n";
+   // identifier
+   // type_decl
+   init->dump_with_types(stream, n+2);
+   body->dump_with_types(stream, n+2);
 
-
-// void block_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
-//                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-//                                 ostream& error_stream)
-// {
-//    dump_line(stream,n,this);
-//    stream << pad(n) << "_block\n";
-//    for(int i = body->first(); body->more(i); i = body->next(i))
-//      body->nth(i)->dump_with_types(stream, n+2);
-//    dump_type(stream,n);
-// }
+   type = Object; // FIX THIS, IT'S WRONG
+   return type;
+}
 
 
 
-// void typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
-//                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-//                                 ostream& error_stream)
-// {
-//    dump_line(stream,n,this);
-//    stream << pad(n) << "_typcase\n";
-//    expr->dump_with_types(stream, n+2);
-//    for(int i = cases->first(); cases->more(i); i = cases->next(i))
-//      cases->nth(i)->dump_with_types(stream, n+2);
-//    dump_type(stream,n);
-// }
+Symbol block_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
+                                std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                ostream& error_stream)
+{
+   for(int i = body->first(); body->more(i); i = body->next(i))
+     body->nth(i)->dump_with_types(stream, n+2);
+
+    // type of a block is the value of the last expression
+    return Object; // FIX THIS, IT'S WRONG
+}
 
 
 
-void cond_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
+Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
+                                std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+                                ostream& error_stream)
+{
+
+
+   expr->dump_with_types(stream, n+2);
+   for(int i = cases->first(); cases->more(i); i = cases->next(i))
+     cases->nth(i)->dump_with_types(stream, n+2);
+    return Object; // FIX THIS, THIS IS WRONG
+}
+
+
+
+Symbol cond_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                             ostream& error_stream)
 {
@@ -915,7 +913,7 @@ void cond_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 }
 
 
-void assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
+Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                 ostream& error_stream)
 {
