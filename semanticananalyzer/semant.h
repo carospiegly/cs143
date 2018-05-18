@@ -41,6 +41,8 @@ private:
   void verify_parent_classes_are_defined();
   void add_class_methods_to_method_table(Class__class *curr_class);
   void populate_child_parent_and_unique_ID_maps();
+  SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> > * get_method_table();
+
   ostream& error_stream;
 public:
   ClassTable(Classes);

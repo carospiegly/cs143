@@ -231,6 +231,12 @@ void ClassTable::add_class_methods_to_method_table(Class__class *curr_class)
 }
 
 
+SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> > * ClassTable::get_method_table()
+{
+    return _method_table;
+}
+
+
 void ClassTable::install_basic_classes() {
 
     // The tree package uses these globals to annotate the classes built below.
@@ -392,7 +398,7 @@ void program_class::semant()
     ClassTable *classtable = new ClassTable(classes, id_to_type_symtab, method_table);
 
     SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table = 
-        classtable.get_method_table();
+        classtable->get_method_table();
     SymbolTable<Symbol,Symbol> *id_to_type_symtab = new SymbolTable<Symbol,Symbol>();
 
     // WE LOOP THROUGH IN TERMS OF CLASS HIERARCHY! NOT IN TERMS OF PROGRAM ORDER
