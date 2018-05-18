@@ -422,12 +422,12 @@ void program_class::semant()
         // if( curr_feat->feat_is_method() )
         // {
         //     /* is attribute */
-        //     id_to_type_symtab->addid( curr_feat->get_name(), get_type_decl() );
+        //     id_to_type_symtab->addid( curr_feat->get_name(), type_check_decl() );
         // } 
         
         Class__class *curr_class = classes->nth(i);
         // get down to the first expression of class
-        //curr_class->get_type(id_to_type_symtab, method_table, classtable->semant_error(curr_class) );  
+        //curr_class->type_check(id_to_type_symtab, method_table, classtable->semant_error(curr_class) );  
         id_to_type_symtab->exitscope(); 
     }
 
@@ -571,54 +571,54 @@ bool ClassTable::check_inheritance_graph_for_cycles()
 }
 
 
-   Symbol static_dispatch_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
+   Symbol static_dispatch_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
       // typename, name
-      expr->get_type(symtab, mtab, error_stream);
+      expr->type_check(symtab, mtab, error_stream);
 
       for(int i = actual->first(); actual->more(i); i = actual->next(i))
-        actual->nth(i)->get_type(symtab, mtab, error_stream);
+        actual->nth(i)->type_check(symtab, mtab, error_stream);
 
       return type_name; // CHANGE THIS TO RETURN THE LAST ARG OF FORMALS
    }
 
 
-Symbol dispatch_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
+Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
         {
-                expr->get_type(symtab, mtab, error_stream);
+                expr->type_check(symtab, mtab, error_stream);
                 for(int i = actual->first(); actual->more(i); i = actual->next(i))
                 {
-                        actual->nth(i)->get_type(symtab, mtab, error_stream);
+                        actual->nth(i)->type_check(symtab, mtab, error_stream);
                 }
         return name; // we should instead be returning last Symbol in "actual"
         }
 
 
-   Symbol loop_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
+   Symbol loop_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
-      if ( pred->get_type(symtab, mtab, error_stream) != Bool )
+      if ( pred->type_check(symtab, mtab, error_stream) != Bool )
       {
          error_stream << "You did not use a boolean predicate for the while loop";
       }
       // check if T2 is in the table!!
-      // body->get_type(symtab, mtab, error_stream);
+      // body->type_check(symtab, mtab, error_stream);
 
       type = Object;
    }
 
 
 
-   Symbol plus_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
+   Symbol plus_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
 {
-      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
+      if(! ((e1-> type_check()) == Int) && ((e2 -> type_check()) == Int)){
          //error
         error_stream << "Attempted to add two non-integers";
       }
@@ -628,12 +628,12 @@ Symbol dispatch_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
    }
 
 
- Symbol sub_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
+ Symbol sub_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
 
-      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
+      if(! ((e1-> type_check()) == Int) && ((e2 -> type_check()) == Int)){
          //error
       }
 
@@ -643,15 +643,15 @@ Symbol dispatch_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-  Symbol isvoid_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
+  Symbol isvoid_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
-      e1->get_type(symtab, mtab, error_stream);
+      e1->type_check(symtab, mtab, error_stream);
    }
 
 
-   Symbol no_expr_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
+   Symbol no_expr_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
@@ -661,12 +661,12 @@ Symbol dispatch_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
 
 
 
- Symbol mul_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
+ Symbol mul_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
 
-      if( !((e1-> get_type() == Int) && (e2 -> get_type() == Int)) ){
+      if( !((e1-> type_check() == Int) && (e2 -> type_check() == Int)) ){
          //error
 
       }
@@ -676,12 +676,12 @@ Symbol dispatch_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
    }
 
 
- Symbol divide_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
+ Symbol divide_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
 
-      if(! ((e1-> get_type()) == Int) && ((e2 -> get_type()) == Int)){
+      if(! ((e1-> type_check()) == Int) && ((e2 -> type_check()) == Int)){
          //error
       }
 
@@ -690,12 +690,12 @@ Symbol dispatch_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
    }
 
 
- Symbol neg_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
+ Symbol neg_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
 
-      if(! (e1-> get_type()) == Int){
+      if(! (e1-> type_check()) == Int){
          //error
       }
 
@@ -704,15 +704,15 @@ Symbol dispatch_class::get_type(SymbolTable<Symbol,Symbol> *symtab,
    }
 
 
-Symbol lt_class::get_type(   SymbolTable<Symbol,Symbol> *symtab,
+Symbol lt_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
       // this
 
       if(! (
-            (e1-> get_type(symtab, mtab, error_stream)) == Int)
-            && ((e2-> get_type(symtab, mtab, error_stream)) == Int)
+            (e1-> type_check(symtab, mtab, error_stream)) == Int)
+            && ((e2-> type_check(symtab, mtab, error_stream)) == Int)
          ) {
          //error
       }
@@ -721,13 +721,13 @@ Symbol lt_class::get_type(   SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-Symbol eq_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
+Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& stream)
    {
 
-      Symbol T1 = e1->get_type( symtab, mtab, stream);
-      Symbol T2 = e2->get_type( symtab, mtab, stream);
+      Symbol T1 = e1->type_check( symtab, mtab, stream);
+      Symbol T2 = e2->type_check( symtab, mtab, stream);
       if ( ((T1 == Bool) && (T2 != Bool)) || ((T2 == Bool) && (T1 != Bool)) ){
          stream << "You tried to check different types for equality v bad";
       }
@@ -745,25 +745,25 @@ Symbol eq_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-   Symbol leq_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
+   Symbol leq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
    {
-      e1->get_type(symtab, mtab, error_stream);
-      e2->get_type(symtab, mtab, error_stream);
+      e1->type_check(symtab, mtab, error_stream);
+      e2->type_check(symtab, mtab, error_stream);
       return Bool;
    }
 
 
-   Symbol comp_class::get_type(	SymbolTable<Symbol,Symbol> *symtab,
+   Symbol comp_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
 				SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
 				ostream& error_stream)
    {
-      e1->get_type(symtab, mtab, error_stream);
+      e1->type_check(symtab, mtab, error_stream);
    }
 
 
-   Symbol string_const_class::get_type(	SymbolTable<Symbol,Symbol> *symtab,
+   Symbol string_const_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
                         		SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         		ostream& error_stream)
    {
@@ -774,7 +774,7 @@ Symbol eq_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-Symbol new__class::get_type(	SymbolTable<Symbol,Symbol> *symtab,
+Symbol new__class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
                         	SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         	ostream& error_stream)
    {
