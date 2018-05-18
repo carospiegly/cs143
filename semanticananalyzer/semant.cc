@@ -190,6 +190,7 @@ void ClassTable::populate_child_parent_and_unique_ID_maps()
         Symbol parent_class_name = curr_class->get_parent();
         if( _valid_classes.find(child_class_name) != _valid_classes.end() )
         {
+	    _declared_classes_map.insert(std::make_pair(child_class_name, curr_class));
             // besides acyclicity, we can say this class is legit bc it persisted in the valid classes set
             // SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
             if (parent_class_name != NULL)
