@@ -571,23 +571,6 @@ bool ClassTable::check_inheritance_graph_for_cycles()
 }
 
 
-
-   /* We extract the Symbols from out of the formals list */
-   /*std::vector<Symbol> method_class::get_params_and_rt()
-   {
-      std::vector<Symbol> params_and_rt;
-      for(int i = formals->first(); formals->more(i); i = formals->next(i))
-      {
-         // we don't make a local variable of class "formal_class"
-         // because class is defined below ...
-         Symbol formal_type = formals->nth(i)->get_type_decl();
-         params_and_rt.push_back(formal_type);
-      }
-      params_and_rt.push_back(return_type);
-      return params_and_rt;
-   }
-*/
-
    Symbol static_dispatch_class::get_type(     SymbolTable<Symbol,Symbol> *symtab,
                         SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
                         ostream& error_stream)
