@@ -194,10 +194,7 @@ void ClassTable::populate_child_parent_and_unique_ID_maps()
 	    _declared_classes_map.insert(std::make_pair(child_class_name, curr_class));
             // besides acyclicity, we can say this class is legit bc it persisted in the valid classes set
             // if this class does not inherit from anybody, do not record it having any parent
-            if (parent_class_name != Object)
-            {
-                    _child_to_parent_classmap.insert(std::make_pair(child_class_name, parent_class_name ));
-            }
+            _child_to_parent_classmap.insert(std::make_pair(child_class_name, parent_class_name ));
             _symbol_to_class_index_map.insert(std::make_pair(child_class_name,unique_class_idx));
             unique_class_idx++;
 
@@ -591,12 +588,17 @@ bool ClassTable::check_inheritance_graph_for_cycles()
 	
 	// SOME WILL NOT INHERIT FROM ANY CLASS -- HAVE NOT ACCOUNTED FOR THIS CASE YET
 	Symbol parent_class_name = it->second;
-	Symbol child_class_name = it->first;
-	int parent_idx = _symbol_to_class_index_map.find( parent_class_name )->second;
-	int child_idx = _symbol_to_class_index_map.find( child_class_name )->second;
-        std::cout << "Adding edge from " << parent_idx << " to " << child_idx << std::endl;
-	g.addEdge(parent_idx, child_idx);
-   }
+	
+	// // if this class does not inherit from anybody, do not record it having any parent
+	if (parent_class_name != Object)
+            {
+		Symbol child_class_name = it->first;
+		int parent_idx = _symbol_to_class_index_map.find( parent_class_name )->second;
+		int child_idx = _symbol_to_class_index_map.find( child_class_name )->second;
+		std::cout << "Adding edge from " << parent_idx << " to " << child_idx << std::endl;
+		g.addEdge(parent_idx, child_idx);
+    	    } 
+    }
 
     if(g.isCyclic())
     {
