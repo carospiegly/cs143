@@ -412,35 +412,41 @@ void program_class::semant()
         classtable->get_method_map();
     SymbolTable<Symbol,Symbol> *id_to_type_symtab = new SymbolTable<Symbol,Symbol>();
 
-    // WE LOOP THROUGH IN TERMS OF CLASS HIERARCHY! NOT IN TERMS OF PROGRAM ORDER
+    
+    std::set<Symbol> valid_classes = classtable->get_class_set();
 
     // Perform all type checking
-    for(int i = classes->first(); classes->more(i); i = classes->next(i))
+    for(std::set<Symbol>::iterator it = valid_classes.begin(); it != valid_classes.end(); it++)
     {
         id_to_type_symtab->enterscope();
 
-        Class__class *curr_class = classes->nth(i);
-/*        
-        //for each class, add attributes of inherited classes 
-        Class_class *parent = (classtable->get_child_map()).find(curr_class);
+        Symbol curr_class = *it; 
+        
 
-        list_node<Feature> *curr_features = parent->get_features();
-    
+        //for each class, add attributes of inherited classes 
+        Symbol parent = ((classtable->get_child_map()).find(curr_class))->second;
+
+	if( parent!= Object ){
+
+        list_node<Feature> *curr_features = (((classtable->get_class_map()).find(parent))->second)->get_features();
+   
     for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
     {
         Feature_class *curr_feat = curr_features->nth(j);
  
         if (!curr_feat->feat_is_method() )
         {
-              id_to_type_symtab->addid( curr_feat->get_name(), get_type_decl() );
+              id_to_type_symtab->addid( curr_feat->get_name(), curr_feat->get_type_decl() );
          } 
 
     }
-	Class_class *new_parent = (classtable->get_child_map()).find(parent);
 
-	while(new_parent!=NULL){
+
+	Symbol new_parent = ((classtable->get_child_map()).find(parent))->second;
+
+	while(new_parent!= Object){
     
-        list_node<Feature> *curr_features = new_parent->get_features();
+        list_node<Feature> *curr_features =((classtable->get_class_map()).find(new_parent))->second->get_features();
    
    	 for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
     {
@@ -448,11 +454,16 @@ void program_class::semant()
  
         if (!curr_feat->feat_is_method() )
         {
-              id_to_type_symtab->addid( curr_feat->get_name(), get_type_decl() );
+              id_to_type_symtab->addid( curr_feat->get_name(), curr_feat->get_type_decl() );
          } 
      }
  }
-  */      //TYPE CHECK HERE
+
+ }
+
+
+        //TYPE CHECK HERE
+
         // get down to the first expression of class
         //curr_class->type_check(id_to_type_symtab, method_map, classtable->semant_error(curr_class) );  
         id_to_type_symtab->exitscope(); 
@@ -598,6 +609,16 @@ bool ClassTable::check_inheritance_graph_for_cycles()
 }
 
 
+
+
+
+ Symbol *method_class::get_type_decl()
+   {
+        return &Object;
+   }
+
+
+
    Symbol static_dispatch_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                         ostream& error_stream)
@@ -607,7 +628,8 @@ bool ClassTable::check_inheritance_graph_for_cycles()
 
       for(int i = actual->first(); actual->more(i); i = actual->next(i))
         actual->nth(i)->type_check(symtab, method_map, error_stream);
-
+        //look up method in method table
+    
       return type_name; // CHANGE THIS TO RETURN THE LAST ARG OF FORMALS
    }
 
@@ -616,7 +638,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                         ostream& error_stream)
         {
-                expr->type_check(symtab, method_map, error_stream);
+                expr->type_check(symtab, method_map, error_stream); //must conform to the type as type_name
                 for(int i = actual->first(); actual->more(i); i = actual->next(i))
                 {
                         actual->nth(i)->type_check(symtab, method_map, error_stream);
@@ -633,11 +655,11 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
       {
          error_stream << "You did not use a boolean predicate for the while loop";
       }
-      // check if T2 is in the table!!
-      // body->type_check(symtab, method_map, error_stream);
+
+     body->type_check(symtab, method_map, error_stream); 
 
       type = Object;
-      return type;
+      return Object;
    }
 
 
@@ -646,9 +668,9 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                         ostream& error_stream)
 {
+
       if(! (	(e1->type_check(symtab,method_map,error_stream) == Int) 
 		&& (e2 ->type_check(symtab,method_map,error_stream) == Int))	 ){
-         //error
         error_stream << "Attempted to add two non-integers";
       }
 
@@ -662,14 +684,15 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         ostream& error_stream)
    {
 
-
       if(! (    (e1->type_check(symtab,method_map,error_stream) == Int)
                 && (e2 ->type_check(symtab,method_map,error_stream) == Int))     ){
          //error
         error_stream << "Attempted to add two non-integers";
       }
       type = Int;
-      return type;
+
+      return Int;
+
    }
 
 
@@ -678,8 +701,9 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                         ostream& error_stream)
    {
-      e1->type_check(symtab, method_map, error_stream);
-      return Object; // ????
+      e1->type_check(symtab, method_map, error_stream); 
+      type = Bool;
+      return Bool;
    }
 
 
@@ -698,6 +722,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                         ostream& error_stream)
    {
+
 
       if(! (    (e1->type_check(symtab,method_map,error_stream) == Int)
                 && (e2 ->type_check(symtab,method_map,error_stream) == Int))     ){
@@ -719,6 +744,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                 && (e2 ->type_check(symtab,method_map,error_stream) == Int))     ){
          //error
         error_stream << "Attempted to add two non-integers";
+
       }
 
       type = Int;
@@ -734,6 +760,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
       if(! (e1->type_check(symtab,method_map,error_stream) != Int) ){
          //error
          error_stream << "You tried to negate a non-integer";
+
       }
 
       type = Int;
@@ -745,16 +772,13 @@ Symbol lt_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                         ostream& error_stream)
    {
-      // this
-
-      if(! (    (e1->type_check(symtab,method_map,error_stream) == Int)
-                && (e2 ->type_check(symtab,method_map,error_stream) == Int))     ){
-         //error
-        error_stream << "Attempted to add two non-integers";
+      if(! (((e1-> type_check(symtab,method_map,error_stream)) == Int) && ((e2 -> type_check(symtab,method_map,error_stream)) == Int))){
+         error_stream << "Attempted to compare two non-integers";
       }
-
+    
       type = Bool;
-      return type;
+      return Bool;
+
    }
 
 
@@ -766,6 +790,7 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
       Symbol T1 = e1->type_check( symtab, method_map, stream);
       Symbol T2 = e2->type_check( symtab, method_map, stream);
+      
       if ( ((T1 == Bool) && (T2 != Bool)) || ((T2 == Bool) && (T1 != Bool)) ){
          stream << "You tried to check different types for equality v bad";
       }
@@ -777,6 +802,7 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
       {
          stream << "You tried to check different types for equality v bad";
       }
+
       type = Bool;
       return Bool;
   }
@@ -787,8 +813,10 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                     ostream& error_stream)
    {
-      e1->type_check(symtab, method_map, error_stream);
-      e2->type_check(symtab, method_map, error_stream);
+      if(! (((e1-> type_check()) == Int) && ((e2 -> type_check()) == Int))){
+         error_stream << "Attempted to compare two non-integers";
+      }
+      type = Bool;
       return Bool;
    }
 
@@ -797,7 +825,13 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                     ostream& error_stream)
    {
-      e1->type_check(symtab, method_map, error_stream);
+
+      if( ( e1->type_check(symtab, method_map, error_stream) != Bool ) ) {
+        error_stream << "Attempted to get complement of a non Bool."; 
+
+      }
+
+      type = Bool;
       return Bool;
    }
 
@@ -806,9 +840,7 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                             ostream& error_stream)
    {
-      // access this
-      //print_escaped_string(stream,token->get_string());
-      return token; // how to return that it is a Symbol?
+      return Str; 
    }
 
 

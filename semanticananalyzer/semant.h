@@ -48,6 +48,8 @@ public:
   ClassTable(Classes);
   std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > get_method_map();
   std::map<Symbol,Symbol> get_child_map(){ return _child_to_parent_classmap; }
+  std::map<Symbol,Class_> get_class_map(){ return _declared_classes_map; }
+  std::set<Symbol> get_class_set(){ return _valid_classes; }
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
