@@ -410,20 +410,20 @@ void program_class::semant()
         classtable->get_method_table();
     SymbolTable<Symbol,Symbol> *id_to_type_symtab = new SymbolTable<Symbol,Symbol>();
 
-    // WE LOOP THROUGH IN TERMS OF CLASS HIERARCHY! NOT IN TERMS OF PROGRAM ORDER
-
     // Perform all type checking
-    for(int i = classes->first(); classes->more(i); i = classes->next(i))
+    for(it = _valid_classes.begin(); it != _valid_classes.end(); it++)
     {
         id_to_type_symtab->enterscope();
 
-        Class__class *curr_class = classes->nth(i);
+        Symbol curr_class = *it; 
         
         //for each class, add attributes of inherited classes 
-        Class_class *parent = (classtable->get_child_map()).find(curr_class);
+        Symbol parent = (classtable->get_child_map()).std::find(curr_class);
 
-        list_node<Feature> *curr_features = parent->get_features();
-    
+	if( parent!= Object ){
+
+        list_node<Feature> *curr_features = ((classtable->get_class_map()).std::find(parent))->get_features();
+   
     for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
     {
         Feature_class *curr_feat = curr_features->nth(j);
@@ -434,9 +434,9 @@ void program_class::semant()
          } 
 
     }
-	Class_class *new_parent = (classtable->get_child_map()).find(parent);
+	Class_class *new_parent = (classtable->get_child_map()).std::find(parent);
 
-	while(new_parent!=NULL){
+	while(new_parent!= Object){
     
         list_node<Feature> *curr_features = new_parent->get_features();
    
@@ -450,6 +450,9 @@ void program_class::semant()
          } 
      }
  }
+ }
+
+
         //TYPE CHECK HERE
         // get down to the first expression of class
         //curr_class->type_check(id_to_type_symtab, method_table, classtable->semant_error(curr_class) );  
