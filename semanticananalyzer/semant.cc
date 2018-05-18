@@ -866,7 +866,7 @@ Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-void bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
+Symbol bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                     ostream& error_stream)
 {
@@ -876,7 +876,7 @@ void bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-void int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
+Symbol int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                     ostream& error_stream)
 {
