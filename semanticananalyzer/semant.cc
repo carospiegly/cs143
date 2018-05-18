@@ -99,22 +99,23 @@ static void initialize_constants(void)
 
    "Class_" is a type def for :typedef class Class__class *Class_"
 
+   _declared_classes_map is a map that maps
+    _std::map Type -> Class_ that keeps track of all the declared classes, 
+    so Bool, Int, etc will have an entry there.
 */
 ClassTable::ClassTable(Classes classes) : 	_classes(classes), 
                                             _valid_classes(),
                                             _symbol_to_class_index_map(),
                                             _child_to_parent_classmap(),
-                                            _method_table(new SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> >() ),
-					    _declared_classes_map(),   
-					/*_std::map Type -> Class_ that keeps track of all the declared classes, so Bool, Int, etc will have an entry there.*/
-	                                       semant_errors(0) , 
+                                            _method_map(),
+                                            _declared_classes_map(),   
+                                            semant_errors(0) , 
                                             error_stream(cerr)
 {
 	// walk through each of the classes in the class list of the program
 	//list_node<Class__class *> class_deep_copy = classes->copy_list(); // make a deep copy. We might need to modify it as we go???	
 
-    // method table is indexed by Class Symbol, Method Symbol
-    _method_table->enterscope();
+    // method map is indexed by Class Symbol, Method Symbol
 
 	// PASS 1 -- make a set with all of the class names (not including the parent each is inherited from)
 	gather_valid_classes();
@@ -202,7 +203,7 @@ void ClassTable::populate_child_parent_and_unique_ID_maps()
 
             // add the class to the symbol table
             // add the methods of this class to the methodtable
-            add_class_methods_to_method_table(curr_class);
+            add_class_methods_to_method_map(curr_class);
         }
     }
 	// assert size of set is the same size as the number of unique classes
@@ -213,7 +214,7 @@ void ClassTable::populate_child_parent_and_unique_ID_maps()
 /*
         Add the methods of this class to the methodtable
 */
-void ClassTable::add_class_methods_to_method_table(Class__class *curr_class)
+void ClassTable::add_class_methods_to_method_map(Class__class *curr_class)
 {
     Symbol curr_class_name = curr_class->get_name();
     list_node<Feature> *curr_features = curr_class->get_features();
@@ -230,15 +231,15 @@ void ClassTable::add_class_methods_to_method_table(Class__class *curr_class)
             std::vector<Symbol> *params_and_rt = new std::vector<Symbol>( curr_feat->get_params_and_rt() );
 
             // if its a method, then we need to add it to the method table
-            _method_table->addid( key, params_and_rt );
+            _method_map.insert(std::make_pair( key, params_and_rt ));
         }
     }
 }
 
 
-SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> > * ClassTable::get_method_table()
+std::map<std::pair<Symbol,Symbol>, std::vector<Symbol> >  ClassTable::get_method_map()
 {
-    return _method_table;
+    return _method_map;
 }
 
 
@@ -407,8 +408,8 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     ClassTable *classtable = new ClassTable(classes);
 
-    SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *method_table = 
-        classtable->get_method_table();
+    std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map = 
+        classtable->get_method_map();
     SymbolTable<Symbol,Symbol> *id_to_type_symtab = new SymbolTable<Symbol,Symbol>();
 
     // WE LOOP THROUGH IN TERMS OF CLASS HIERARCHY! NOT IN TERMS OF PROGRAM ORDER
@@ -453,7 +454,7 @@ void program_class::semant()
  }
   */      //TYPE CHECK HERE
         // get down to the first expression of class
-        //curr_class->type_check(id_to_type_symtab, method_table, classtable->semant_error(curr_class) );  
+        //curr_class->type_check(id_to_type_symtab, method_map, classtable->semant_error(curr_class) );  
         id_to_type_symtab->exitscope(); 
     }
 
@@ -598,42 +599,42 @@ bool ClassTable::check_inheritance_graph_for_cycles()
 
 
    Symbol static_dispatch_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
       // typename, name
-      expr->type_check(symtab, mtab, error_stream);
+      expr->type_check(symtab, method_map, error_stream);
 
       for(int i = actual->first(); actual->more(i); i = actual->next(i))
-        actual->nth(i)->type_check(symtab, mtab, error_stream);
+        actual->nth(i)->type_check(symtab, method_map, error_stream);
 
       return type_name; // CHANGE THIS TO RETURN THE LAST ARG OF FORMALS
    }
 
 
 Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
         {
-                expr->type_check(symtab, mtab, error_stream);
+                expr->type_check(symtab, method_map, error_stream);
                 for(int i = actual->first(); actual->more(i); i = actual->next(i))
                 {
-                        actual->nth(i)->type_check(symtab, mtab, error_stream);
+                        actual->nth(i)->type_check(symtab, method_map, error_stream);
                 }
         return name; // we should instead be returning last Symbol in "actual"
         }
 
 
    Symbol loop_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
-      if ( pred->type_check(symtab, mtab, error_stream) != Bool )
+      if ( pred->type_check(symtab, method_map, error_stream) != Bool )
       {
          error_stream << "You did not use a boolean predicate for the while loop";
       }
       // check if T2 is in the table!!
-      // body->type_check(symtab, mtab, error_stream);
+      // body->type_check(symtab, method_map, error_stream);
 
       type = Object;
    }
@@ -641,7 +642,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 
    Symbol plus_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
 {
       if(! ((e1-> type_check()) == Int) && ((e2 -> type_check()) == Int)){
@@ -655,7 +656,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 
  Symbol sub_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
 
@@ -670,15 +671,15 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 
   Symbol isvoid_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
-      e1->type_check(symtab, mtab, error_stream);
+      e1->type_check(symtab, method_map, error_stream);
    }
 
 
    Symbol no_expr_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
       // can use "this" if needed
@@ -688,7 +689,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 
  Symbol mul_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
 
@@ -703,7 +704,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 
  Symbol divide_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
 
@@ -717,7 +718,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 
  Symbol neg_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
 
@@ -731,14 +732,14 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 
 Symbol lt_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
       // this
 
       if(! (
-            (e1-> type_check(symtab, mtab, error_stream)) == Int)
-            && ((e2-> type_check(symtab, mtab, error_stream)) == Int)
+            (e1-> type_check(symtab, method_map, error_stream)) == Int)
+            && ((e2-> type_check(symtab, method_map, error_stream)) == Int)
          ) {
          //error
       }
@@ -748,12 +749,12 @@ Symbol lt_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
 
 
 Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& stream)
    {
 
-      Symbol T1 = e1->type_check( symtab, mtab, stream);
-      Symbol T2 = e2->type_check( symtab, mtab, stream);
+      Symbol T1 = e1->type_check( symtab, method_map, stream);
+      Symbol T2 = e2->type_check( symtab, method_map, stream);
       if ( ((T1 == Bool) && (T2 != Bool)) || ((T2 == Bool) && (T1 != Bool)) ){
          stream << "You tried to check different types for equality v bad";
       }
@@ -772,25 +773,25 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 
    Symbol leq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
-                        SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         ostream& error_stream)
    {
-      e1->type_check(symtab, mtab, error_stream);
-      e2->type_check(symtab, mtab, error_stream);
+      e1->type_check(symtab, method_map, error_stream);
+      e2->type_check(symtab, method_map, error_stream);
       return Bool;
    }
 
 
    Symbol comp_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
-				SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+				std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
 				ostream& error_stream)
    {
-      e1->type_check(symtab, mtab, error_stream);
+      e1->type_check(symtab, method_map, error_stream);
    }
 
 
    Symbol string_const_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
-                        		SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        		std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         		ostream& error_stream)
    {
       // access this
@@ -801,7 +802,7 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 
 Symbol new__class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
-                        	SymbolTable<std::pair<Symbol,Symbol>,std::vector<Symbol> > *mtab,
+                        	std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > method_map,
                         	ostream& error_stream)
    {
       // member variables are:
