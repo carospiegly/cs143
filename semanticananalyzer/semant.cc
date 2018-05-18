@@ -416,16 +416,40 @@ void program_class::semant()
     for(int i = classes->first(); classes->more(i); i = classes->next(i))
     {
         id_to_type_symtab->enterscope();
-
-        // add the attributes right here
-        // // if its an attribute, then its a variable we need to add to the symbol table
-        // if( curr_feat->feat_is_method() )
-        // {
-        //     /* is attribute */
-        //     id_to_type_symtab->addid( curr_feat->get_name(), get_type_decl() );
-        // } 
-        
         Class__class *curr_class = classes->nth(i);
+        
+        //for each class, add attributes of inherited classes 
+        Class_class *parent = (classtable->get_child_map()).find(curr_class);
+
+        list_node<Feature> *curr_features = parent->get_features();
+    
+    for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
+    {
+        Feature_class *curr_feat = curr_features->nth(j);
+ 
+        if (!curr_feat->feat_is_method() )
+        {
+              id_to_type_symtab->addid( curr_feat->get_name(), get_type_decl() );
+         } 
+
+    }
+	Class_class *new_parent = (classtable->get_child_map()).find(parent);
+
+	while(new_parent!=NULL){
+    
+        list_node<Feature> *curr_features = new_parent->get_features();
+   
+   	 for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
+    {
+        Feature_class *curr_feat = curr_features->nth(j);
+ 
+        if (!curr_feat->feat_is_method() )
+        {
+              id_to_type_symtab->addid( curr_feat->get_name(), get_type_decl() );
+         } 
+     }
+ }
+        //TYPE CHECK HERE
         // get down to the first expression of class
         //curr_class->get_type(id_to_type_symtab, method_table, classtable->semant_error(curr_class) );  
         id_to_type_symtab->exitscope(); 

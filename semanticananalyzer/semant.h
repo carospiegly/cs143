@@ -47,7 +47,7 @@ private:
 public:
   ClassTable(Classes);
   SymbolTable<std::pair<Symbol,Symbol>, std::vector<Symbol> > * get_method_table();
-
+  std::map<Symbol,Symbol> get_child_map(){ return _child_to_parent_classmap; }
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
