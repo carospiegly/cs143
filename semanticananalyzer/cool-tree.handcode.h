@@ -8,6 +8,10 @@
 #include "tree.h"
 #include "cool.h"
 #include "stringtab.h"
+#include <map>
+#include <utility>
+
+
 #define yylineno curr_lineno;
 extern int yylineno;
 
@@ -101,6 +105,7 @@ void dump_type(ostream&, int);               \
 Expression_class() { type = (Symbol) NULL; }
 
 #define Expression_SHARED_EXTRAS           \
-void dump_with_types(ostream&,int); 
+void dump_with_types(ostream&,int);       \
+Symbol type_check(SymbolTable<Symbol,Symbol> *symtab, std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map, ostream& error_stream);
 
 #endif
