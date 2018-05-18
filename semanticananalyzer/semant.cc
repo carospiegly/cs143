@@ -966,8 +966,7 @@ Symbol branch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
     // name
    // type_decl
    expr->type_check(symtab, method_map, error_stream);
-   type = Object; // FIX THIS LATER, ITS WRONG
-   return type;
+   return Object; // FIX THIS LATER, ITS WRONG
 }
 
 
