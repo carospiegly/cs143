@@ -1097,13 +1097,15 @@ Symbol Expression_class::least_upper_bound (Symbol symbol1,
 
 
 bool Expression_class::is_subtypeof(  Symbol child, Symbol supposed_parent, 
-                                        std::map<Symbol,Symbol> _child_to_parent_classmap ){
+                                        std::map<Symbol,Symbol> _child_to_parent_classmap )
+{
+    if (child == supposed_parent) return true;
+    if (supposed_parent == Object ) return true;
 
     // if the child is Object, the only way to get subtype_of is if the 
     // parent is also an object
     if ( (child==Object) && (supposed_parent != Object)) return false;
-
-    if (supposed_parent == Object ) return true;
+    
     std::list<Symbol> real_parents; 
     Symbol real_parent = _child_to_parent_classmap.find(child)->second;
     while(real_parent!= Object){
@@ -1115,6 +1117,5 @@ bool Expression_class::is_subtypeof(  Symbol child, Symbol supposed_parent,
         Symbol found_parent = *it; 
         if ( found_parent == supposed_parent) return true;
     }
-
     return false;
 }
