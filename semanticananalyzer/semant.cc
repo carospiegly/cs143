@@ -425,7 +425,8 @@ void program_class::semant()
         std::cerr << "Main class missing";
     }
 
-    bool main_method_missing = ( method_map.find(std::make_pair(Main, main)) == method_map.end() );
+    bool main_method_missing = ( method_map.find(std::make_pair(Main, main_meth)) == method_map.end() );
+    // check that main method takes no arguments
     if (main_method_missing)
     {
         std::cout << "main method missing in Main class.";
