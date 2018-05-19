@@ -90,13 +90,13 @@ void dump_with_types(ostream&,int);
 
 #define Case_EXTRAS                             \
 virtual void dump_with_types(ostream& ,int) = 0; \
-Symbol type_check(SymbolTable<Symbol,Symbol> *symtab, std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map, ostream& error_stream);
+Symbol type_check(SymbolTable<Symbol,Symbol> *symtab, std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map, ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap);
 
 
 
 #define branch_EXTRAS                                   \
 void dump_with_types(ostream& ,int); \
-Symbol type_check(SymbolTable<Symbol,Symbol> *symtab, std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map, ostream& error_stream);
+Symbol type_check(SymbolTable<Symbol,Symbol> *symtab, std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map, ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap);
 
 
 
@@ -110,6 +110,6 @@ Expression_class() { type = (Symbol) NULL; }
 
 #define Expression_SHARED_EXTRAS           \
 void dump_with_types(ostream&,int);       \
-Symbol type_check(SymbolTable<Symbol,Symbol> *symtab, std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map, ostream& error_stream);
+Symbol type_check(SymbolTable<Symbol,Symbol> *symtab, std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map, ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap);
 
 #endif

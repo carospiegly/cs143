@@ -454,6 +454,8 @@ void program_class::semant()
               id_to_type_symtab->addid( curr_feat->get_name(), curr_feat->get_type_decl() );
          } 
      }
+
+     new_parent = (classtable->get_child_map()).find(new_parent)->second;
  }
 
  }
@@ -623,42 +625,87 @@ bool ClassTable::check_inheritance_graph_for_cycles()
 
    Symbol static_dispatch_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
-      // typename, name
-      expr->type_check(symtab, method_map, error_stream);
+            
 
-      for(int i = actual->first(); actual->more(i); i = actual->next(i))
-        actual->nth(i)->type_check(symtab, method_map, error_stream);
-        //look up method in method table
-    
-      return type_name; // CHANGE THIS TO RETURN THE LAST ARG OF FORMALS
+            Symbol dispatch_class = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap); //must conform to the type as type_name
+            
+            if ( !is_subtypeof(dispatch_class, type_name, _child_to_parent_classmap) ){
+
+                    error_stream << "Dispatch class did not conform.";
+                }
+
+
+            std::vector<Symbol> method_formals = method_map.find(std::make_pair(dispatch_class, name))->second; 
+
+            std::vector<Symbol> dispatch_formals; 
+            for(int i = actual->first(); actual->more(i); i = actual->next(i))
+            {
+             dispatch_formals.push_back(actual->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap));
+            }
+            std::vector<Symbol>::iterator iterator;
+//check all formals conform
+        for (std::vector<Symbol>::iterator it = dispatch_formals.begin() ; it != dispatch_formals.end(); ++it){
+            for (iterator = method_formals.begin() ; iterator != method_formals.end(); ++iterator){
+     
+                if (   !is_subtypeof(*it, *iterator, _child_to_parent_classmap) ){
+
+                    error_stream << "Dispatch formal did not conform.";
+                }
+
+            }
+        }
+
+        if ( *iterator == SELF_TYPE ) return *(method_formals.begin()); 
+
+        return *iterator;
    }
 
 
 Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
         {
-                expr->type_check(symtab, method_map, error_stream); //must conform to the type as type_name
-                for(int i = actual->first(); actual->more(i); i = actual->next(i))
-                {
-                        actual->nth(i)->type_check(symtab, method_map, error_stream);
+                
+            Symbol dispatch_class = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap); //must conform to the type as type_name
+            std::vector<Symbol> method_formals = method_map.find(std::make_pair(dispatch_class, name))->second; 
+
+            std::vector<Symbol> dispatch_formals; 
+            for(int i = actual->first(); actual->more(i); i = actual->next(i))
+            {
+             dispatch_formals.push_back(actual->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap));
+            }
+            std::vector<Symbol>::iterator iterator;
+//check all formals conform
+        for (std::vector<Symbol>::iterator it = dispatch_formals.begin() ; it != dispatch_formals.end(); ++it){
+            for (iterator = method_formals.begin() ; iterator != method_formals.end(); ++iterator){
+     
+                if ( !is_subtypeof(*it, *iterator, _child_to_parent_classmap) ){
+
+                    error_stream << "Dispatch formal did not conform.";
                 }
-        return name; // we should instead be returning last Symbol in "actual"
+
+            }
         }
+
+        if ( *iterator == SELF_TYPE ) return *(method_formals.begin()); 
+
+        return *iterator;
+    } 
+
 
 
    Symbol loop_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
-      if ( pred->type_check(symtab, method_map, error_stream) != Bool )
+      if ( pred->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap) != Bool )
       {
          error_stream << "You did not use a boolean predicate for the while loop";
       }
 
-     body->type_check(symtab, method_map, error_stream); 
+     body->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap); 
 
       type = Object;
       return Object;
@@ -668,11 +715,11 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
    Symbol plus_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
-      if(! (	(e1->type_check(symtab,method_map,error_stream) == Int) 
-		&& (e2 ->type_check(symtab,method_map,error_stream) == Int))	 ){
+      if(! (	(e1->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int) 
+		&& (e2 ->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int))	 ){
         error_stream << "Attempted to add two non-integers";
       }
 
@@ -683,11 +730,11 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
  Symbol sub_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
 
-      if(! (    (e1->type_check(symtab,method_map,error_stream) == Int)
-                && (e2 ->type_check(symtab,method_map,error_stream) == Int))     ){
+      if(! (    (e1->type_check(symtab,method_map,error_stream,class_symbol, _child_to_parent_classmap) == Int)
+                && (e2 ->type_check(symtab,method_map,error_stream,class_symbol, _child_to_parent_classmap) == Int))     ){
          //error
         error_stream << "Attempted to add two non-integers";
       }
@@ -701,9 +748,9 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
   Symbol isvoid_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
-      e1->type_check(symtab, method_map, error_stream); 
+      e1->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap); 
       type = Bool;
       return Bool;
    }
@@ -711,7 +758,7 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
    Symbol no_expr_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
       // can use "this" if needed
       return Object; // ????
@@ -722,12 +769,12 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
  Symbol mul_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
 
 
-      if(! (    (e1->type_check(symtab,method_map,error_stream) == Int)
-                && (e2 ->type_check(symtab,method_map,error_stream) == Int))     ){
+      if(! (    (e1->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int)
+                && (e2 ->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int))     ){
          //error
         error_stream << "Attempted to add two non-integers";
       }
@@ -739,11 +786,11 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
  Symbol divide_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
 
-      if(! (    (e1->type_check(symtab,method_map,error_stream) == Int)
-                && (e2 ->type_check(symtab,method_map,error_stream) == Int))     ){
+      if(! (    (e1->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int)
+                && (e2 ->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int))     ){
          //error
         error_stream << "Attempted to add two non-integers";
 
@@ -756,10 +803,10 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
  Symbol neg_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
 
-      if(! (e1->type_check(symtab,method_map,error_stream) != Int) ){
+      if(! (e1->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) != Int) ){
          //error
          error_stream << "You tried to negate a non-integer";
 
@@ -772,9 +819,9 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol lt_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream)
+                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
-      if(! (((e1-> type_check(symtab,method_map,error_stream)) == Int) && ((e2 -> type_check(symtab,method_map,error_stream)) == Int))){
+      if(! (((e1-> type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap)) == Int) && ((e2 -> type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap)) == Int))){
          error_stream << "Attempted to compare two non-integers";
       }
     
@@ -787,11 +834,11 @@ Symbol lt_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& stream)
+                        ostream& stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
 
-      Symbol T1 = e1->type_check( symtab, method_map, stream);
-      Symbol T2 = e2->type_check( symtab, method_map, stream);
+      Symbol T1 = e1->type_check( symtab, method_map, stream, class_symbol,_child_to_parent_classmap);
+      Symbol T2 = e2->type_check( symtab, method_map, stream, class_symbol, _child_to_parent_classmap);
       
       if ( ((T1 == Bool) && (T2 != Bool)) || ((T2 == Bool) && (T1 != Bool)) ){
          stream << "You tried to check different types for equality v bad";
@@ -813,9 +860,9 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
    Symbol leq_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                    ostream& error_stream)
+                                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
-      if(! (((e1-> type_check(symtab,method_map,error_stream)) == Int) && ((e2 -> type_check(symtab,method_map,error_stream)) == Int))){
+      if(! (((e1-> type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap)) == Int) && ((e2 -> type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap)) == Int))){
          error_stream << "Attempted to compare two non-integers";
       }
       type = Bool;
@@ -825,10 +872,10 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
    Symbol comp_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                    ostream& error_stream)
+                                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
 
-      if( ( e1->type_check(symtab, method_map, error_stream) != Bool ) ) {
+      if( ( e1->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap) != Bool ) ) {
         error_stream << "Attempted to get complement of a non Bool."; 
 
       }
@@ -840,7 +887,7 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
    Symbol string_const_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
                                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                            ostream& error_stream)
+                                            ostream& error_stream,Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
       return Str; 
    }
@@ -849,7 +896,7 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol new__class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                ostream& error_stream)
+                                ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
    {
       // member variables are:
       // type_name, this
@@ -860,7 +907,7 @@ Symbol new__class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                    ostream& error_stream)
+                                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     type = Object;
     return type;
@@ -870,7 +917,7 @@ Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                    ostream& error_stream)
+                                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     type = Bool;
     return type;
@@ -880,7 +927,7 @@ Symbol bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                    ostream& error_stream)
+                                    ostream& error_stream,Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     type = Int;
     return type;
@@ -889,13 +936,13 @@ Symbol int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                            ostream& error_stream)
+                            ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
    // identifier
    // type_decl
-   init->type_check(symtab, method_map, error_stream);
-   body->type_check(symtab, method_map, error_stream);
+   init->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+   body->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
 
    type = Object; // FIX THIS, IT'S WRONG
    return type;
@@ -905,10 +952,10 @@ Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol block_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                ostream& error_stream)
+                                ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
    for(int i = body->first(); body->more(i); i = body->next(i))
-     body->nth(i)->type_check(symtab, method_map, error_stream);
+     body->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
 
     // type of a block is the value of the last expression
     return Object; // FIX THIS, IT'S WRONG
@@ -918,7 +965,7 @@ Symbol block_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                ostream& error_stream)
+                                ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
 
@@ -932,15 +979,15 @@ Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol cond_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                            ostream& error_stream)
+                            ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
-    if ( !(pred->type_check(symtab, method_map, error_stream) == Bool) )
+    if ( !(pred->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap) == Bool) )
     {
         error_stream << "You use a conditional (if/then/else) without a boolean predicate";
     }
-    then_exp->type_check(symtab, method_map, error_stream);
-    else_exp->type_check(symtab, method_map, error_stream);
+    then_exp->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+    else_exp->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
     // Find the LEAST UPPER BOUND OF THESE LAST TWO
     return Object; // CHANGE THIS, IT'S WRONG
 }
@@ -948,7 +995,7 @@ Symbol cond_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                ostream& error_stream)
+                                ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     
     // expr->type_check(symtab, method_map, error_stream);
@@ -960,22 +1007,65 @@ Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-Symbol branch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
-                                std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                ostream& error_stream)
+Symbol branch_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
+				std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
+				ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap )
 {
 
     // name
    // type_decl
-   expr->type_check(symtab, method_map, error_stream);
+   expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
    return Object; // FIX THIS LATER, ITS WRONG
 }
 
 
-Symbol static_dispatch_class :: least_upper_bound (Symbol symbol1, Symbol symbol2){
+Symbol Expression_class :: least_upper_bound (Symbol symbol1, Symbol symbol2, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap){
+
+if(symbol1 == symbol2) return symbol1;
+if(symbol1 == SELF_TYPE && symbol2 == SELF_TYPE) return SELF_TYPE;
+if(symbol1 == SELF_TYPE && symbol2 != SELF_TYPE) symbol1 = class_symbol;
+if(symbol2 == SELF_TYPE && symbol1 != SELF_TYPE) symbol2 = class_symbol;
+
+std::list<Symbol> parents1; 
+ Symbol parent1 = _child_to_parent_classmap.find(symbol1)->second;
+ while(parent1!= Object){
+    parents1.push_back(parent1);
+    parent1 = (_child_to_parent_classmap).find(parent1)->second;  
+}
+
+Symbol parent2 = (_child_to_parent_classmap).find(symbol2)->second;
+
+while(parent2 != Object){
+    std::list<Symbol>::iterator it;
+    for (it = parents1.begin(); it != parents1.end(); ++it){
+        if(parent2 == *it){
+            return parent2;
+        }
+    }
+
+    parent2 = _child_to_parent_classmap.find(parent2)->second;
+
+      }
+
+    return Object; 
+}
 
 
- 
+bool Expression_class :: is_subtypeof(Symbol child, Symbol parent, std::map<Symbol,Symbol> _child_to_parent_classmap ){
 
+if (parent == Object ) return true;
+std::list<Symbol> parents; 
+ Symbol parental = _child_to_parent_classmap.find(child)->second;
+ while(parental!= Object){
+    parents.push_back(parent);
+    parental = (_child_to_parent_classmap).find(parental)->second;  
+}
+std::list<Symbol>::iterator it;
+for (it = parents.begin(); it != parents.end(); ++it){
 
+Symbol found = *it; 
+ if ( found == parent) return true;
+}
+
+return false;
 }

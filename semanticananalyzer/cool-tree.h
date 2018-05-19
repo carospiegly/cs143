@@ -87,9 +87,9 @@ public:
    virtual Expression copy_Expression() = 0;
    virtual Symbol type_check(	SymbolTable<Symbol,Symbol> *symtab,
 				std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-				ostream& error_stream) = 0;
-
-
+				ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap ) = 0;
+   Symbol least_upper_bound (Symbol symbol1, Symbol symbol2, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap);
+   bool is_subtypeof(Symbol child, Symbol parent, std::map<Symbol,Symbol> _child_to_parent_classmap);
 #ifdef Expression_EXTRAS
    Expression_EXTRAS
 #endif
@@ -364,6 +364,8 @@ protected:
    Symbol type_name;
    Symbol name;
    Expressions actual;
+
+   
 public:
    static_dispatch_class(Expression a1, Symbol a2, Symbol a3, Expressions a4) {
       expr = a1;
