@@ -1003,16 +1003,25 @@ Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
 }
 
 
-
+/*
+    Only field is "Expressions body"
+*/
 Symbol block_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                 ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-   for(int i = body->first(); body->more(i); i = body->next(i))
-     body->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
-
-    // type of a block is the value of the last expression
-    return Object; // FIX THIS, IT'S WRONG
+    int num_exprs_in_block = body->len();
+    for(int i = body->first(); body->more(i); i = body->next(i))
+    {
+        Symbol curr_expr_type = body->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+        
+        // type of a block is the value of the last expression
+        if (i == (num_exprs_in_block-1) )
+        {
+            type = curr_expr_type;
+        }
+    }
+    return type;
 }
 
 
@@ -1056,12 +1065,12 @@ Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
     {
         error_stream << "ID missing in symtab: You cannot assign a variable that was not declared as a class attribute";
     }
-    Symbol fnd_expr_type = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+    Symbol found_expr_type = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
 
-    if ( !is_subtypeof(fnd_expr_type, *enforced_type_of_ID, _child_to_parent_classmap) ){
+    if ( !is_subtypeof(found_expr_type, *enforced_type_of_ID, _child_to_parent_classmap) ){
         error_stream << "Dispatch class did not conform.";
     }
-    type = fnd_expr_type; // the found expr type
+    type = found_expr_type; 
     return type;
 }
 
