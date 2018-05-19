@@ -418,7 +418,7 @@ void program_class::semant()
     {
         id_to_type_symtab->enterscope();
         Symbol curr_class_symbol = *it; 
-        Class__class *curr_class = *(declared_classes_map.find(curr_class_symbol));
+        Class__class *curr_class = declared_classes_map.find(curr_class_symbol)->second;
         add_own_attributes_to_scope(curr_class_symbol, declared_classes_map, id_to_type_symtab);
         add_parent_attributes_to_scope(child_to_parent_classmap, 
                                         declared_classes_map, 
