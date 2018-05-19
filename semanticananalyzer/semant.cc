@@ -1058,7 +1058,7 @@ Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
     }
     Symbol fnd_expr_type = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
 
-    if ( !is_subtypeof(fnd_expr_type, enforced_type_of_ID, _child_to_parent_classmap) ){
+    if ( !is_subtypeof(fnd_expr_type, *enforced_type_of_ID, _child_to_parent_classmap) ){
         error_stream << "Dispatch class did not conform.";
     }
     type = fnd_expr_type; // the found expr type
