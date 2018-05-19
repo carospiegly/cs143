@@ -1021,8 +1021,6 @@ Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                 ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-
-
    // expr->type_check(symtab, method_map, error_stream);
    // for(int i = cases->first(); cases->more(i); i = cases->next(i))
    //   cases->nth(i)->type_check(symtab, method_map, error_stream);
@@ -1040,21 +1038,30 @@ Symbol cond_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
     {
         error_stream << "You use a conditional (if/then/else) without a boolean predicate";
     }
-    then_exp->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
-    else_exp->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
-    // Find the LEAST UPPER BOUND OF THESE LAST TWO
-    return Object; // CHANGE THIS, IT'S WRONG
+    Symbol e1_type = then_exp->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+    Symbol e2_type = else_exp->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+    type = least_upper_bound (e1_type, e2_type, class_symbol, _child_to_parent_classmap);
+    return type;
 }
 
 
 Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                                ostream& error_stream, 
+                                Symbol class_symbol, 
+                                std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-    
-    // expr->type_check(symtab, method_map, error_stream);
-    // WE SHOULD BE RETURNING SOME SUBTYPE THING
-    type = Object;  // FIX THIS LATER, ITS WRONG
+    Symbol *enforced_type_of_ID = symtab->lookup(name); // check if "Id" is defined 
+    if( enforced_type_of_ID == NULL)
+    {
+        error_stream << "ID missing in symtab: You cannot assign a variable that was not declared as a class attribute";
+    }
+    Symbol fnd_expr_type = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+
+    if ( !is_subtypeof(fnd_expr_type, enforced_type_of_ID, _child_to_parent_classmap) ){
+        error_stream << "Dispatch class did not conform.";
+    }
+    type = fnd_expr_type; // the found expr type
     return type;
 }
 
