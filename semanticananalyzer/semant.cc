@@ -637,7 +637,7 @@ bool ClassTable::check_inheritance_graph_for_cycles()
                 }
 
 
-            std::vector<Symbol> method_formals = method_map.find(std::make_pair(dispatch_class, name))->second; 
+            std::vector<Symbol> method_formals = method_map.find(std::make_pair(type_name, name))->second; 
 
             std::vector<Symbol> dispatch_formals; 
             for(int i = actual->first(); actual->more(i); i = actual->next(i))
@@ -657,9 +657,9 @@ bool ClassTable::check_inheritance_graph_for_cycles()
             }
         }
 
-        if ( *iterator == SELF_TYPE ) return *(method_formals.begin()); 
+        if ( *method_formals.end() == SELF_TYPE ) return dispatch_class; 
 
-        return *iterator;
+        return *method_formals.end();
    }
 
 
@@ -689,9 +689,9 @@ Symbol dispatch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
             }
         }
 
-        if ( *iterator == SELF_TYPE ) return *(method_formals.begin()); 
+      if ( *method_formals.end() == SELF_TYPE ) return dispatch_class; 
 
-        return *iterator;
+        return *method_formals.end();
     } 
 
 
@@ -1054,15 +1054,14 @@ while(parent2 != Object){
 bool Expression_class :: is_subtypeof(Symbol child, Symbol parent, std::map<Symbol,Symbol> _child_to_parent_classmap ){
 
 if (parent == Object ) return true;
-std::list<Symbol> parents; 
+ std::list<Symbol> parents; 
  Symbol parental = _child_to_parent_classmap.find(child)->second;
  while(parental!= Object){
-    parents.push_back(parent);
+    parents.push_back(parental);
     parental = (_child_to_parent_classmap).find(parental)->second;  
 }
 std::list<Symbol>::iterator it;
 for (it = parents.begin(); it != parents.end(); ++it){
-
 Symbol found = *it; 
  if ( found == parent) return true;
 }
