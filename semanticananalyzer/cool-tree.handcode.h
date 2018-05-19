@@ -50,13 +50,21 @@ typedef Cases_class *Cases;
 
 #define Program_EXTRAS                          \
 virtual void semant() = 0;			\
-virtual void dump_with_types(ostream&, int) = 0; 
+virtual void dump_with_types(ostream&, int) = 0; \
+virtual void add_own_attributes_to_scope(Symbol,std::map<Symbol,Class_>&,SymbolTable<Symbol,Symbol> *) = 0;	\
+virtual void add_parent_attributes_to_scope(std::map<Symbol,Symbol>&,std::map<Symbol,Class_>&,Symbol) = 0;	\
+virtual void verify_type_of_all_class_features(SymbolTable<Symbol,Symbol> *,std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > &,ostream&,Symbol,std::map<Symbol,Symbol>&,std::map<Symbol,Class_>&) = 0;
 
 
 
 #define program_EXTRAS                          \
 void semant();     				\
 void dump_with_types(ostream&,int);            \
+void add_own_attributes_to_scope(Symbol,std::map<Symbol,Class_>&,SymbolTable<Symbol,Symbol> *); 	\
+void add_parent_attributes_to_scope(std::map<Symbol,Symbol>&,std::map<Symbol,Class_>&,Symbol);	\
+void verify_type_of_all_class_features(  SymbolTable<Symbol,Symbol> *,std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > &,ostream&,Symbol,std::map<Symbol,Symbol>&,std::map<Symbol,Class_> &);
+
+
 
 #define Class__EXTRAS  \
 virtual Symbol get_filename() = 0;      \
