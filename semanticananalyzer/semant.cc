@@ -419,6 +419,18 @@ void program_class::semant()
     child_to_parent_classmap.insert(std::make_pair(Str, Object));
     child_to_parent_classmap.insert(std::make_pair(IO, Object));
 
+    bool Main_class_missing = ( valid_classes.find(Main) == valid_classes.end() );
+    if (Main_class_missing)
+    {
+        std::cerr << "Main class missing";
+    }
+
+    bool main_method_missing = ( method_map.find(std::make_pair(Main, main)) == method_map.end() );
+    if (main_method_missing)
+    {
+        std::cout << "main method missing in Main class.";
+    }
+
     // Perform all type checking
     for(std::set<Symbol>::iterator it = valid_classes.begin(); it != valid_classes.end(); it++)
     {
@@ -645,8 +657,8 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
     {
         dispatch_formals.push_back(actual->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap));
     }
-    // check number of args is right
-    if (dispatch_formals.size() != method_formals.size() )
+    // check number of args is right -- we added return type to method_formals
+    if (dispatch_formals.size() != (method_formals.size()-1) )
     {
         error_stream << "You tried to call a function, but didnt supply the right number of args.";
     }
@@ -657,7 +669,9 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
             error_stream << "Dispatch formal did not conform.";
         }
     }
-    if ( *method_formals.end() == SELF_TYPE ) return dispatch_class; 
+
+    // check if the return type is SELF_TYPE
+    if ( *method_formals.back() == SELF_TYPE ) return dispatch_class; 
     return *method_formals.end();
 }
 
@@ -679,8 +693,8 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
     {
         dispatch_formals.push_back(actual->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap));
     }
-    // check number of args is right
-    if (dispatch_formals.size() != method_formals.size() )
+    // check number of args is right -- we added return type to method_formals
+    if (dispatch_formals.size() != (method_formals.size()-1) )
     {
         error_stream << "You tried to call a function, but didnt supply the right number of args.";
     }
