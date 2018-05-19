@@ -650,7 +650,7 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
     //must conform to the type as type_name
     Symbol dispatch_class = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap); 
     if ( !is_subtypeof(dispatch_class, type_name, _child_to_parent_classmap) ){
-        error_stream << "Dispatch class did not conform.";
+        error_stream << "Static dispatch class did not conform.";
     }
     std::vector<Symbol> method_formals = method_map.find(std::make_pair(type_name, name))->second; 
     std::vector<Symbol> dispatch_formals; 
@@ -672,7 +672,7 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
     }
 
     // check if the return type is SELF_TYPE
-    if ( *method_formals.back() == SELF_TYPE ) return dispatch_class; 
+    if ( method_formals.back() == SELF_TYPE ) return dispatch_class; 
     return *method_formals.end();
 }
 
@@ -1055,7 +1055,7 @@ Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
     Symbol found_expr_type = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
 
     if ( !is_subtypeof(found_expr_type, *enforced_type_of_ID, _child_to_parent_classmap) ){
-        error_stream << "Dispatch class did not conform.";
+        error_stream << "Assign class did not conform.";
     }
     type = found_expr_type; 
     return type;
