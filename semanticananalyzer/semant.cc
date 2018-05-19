@@ -894,14 +894,15 @@ Symbol eq_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 
 
+/*
+	When "new <type>" is defined, we return <type>
+*/
 Symbol new__class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                 ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
-   {
-      // member variables are:
-      // type_name, this
-      return Object; // CHANGE THIS TO TYPE
-    }
+{
+	return type_name;
+}
 
 
 
@@ -934,17 +935,26 @@ Symbol int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
 }
 
 
+/*
+	We enforce that 
+		e1 is a subtype of T0
+*/
 Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                             ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
+   Symbol initType = init->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+   if( !is_subtypeof(initType, type_decl, _child_to_parent_classmap) )
+   {
+	error_stream << "the let initialization was not a subtype of the declared type of the var";
+   }
 
-   // identifier
-   // type_decl
-   init->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
-   body->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+   symtab->enterscope(); 
+   symtab->addid(identifier, &type_decl); // add x temporarily to the symbol table
+   Symbol bodyType = body->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+   symtab->exitscope(); // x is removed from the symbol table
 
-   type = Object; // FIX THIS, IT'S WRONG
+   type = bodyType; 
    return type;
 }
 
