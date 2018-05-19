@@ -57,6 +57,7 @@ public:
    virtual Symbol get_name() = 0;
    virtual Symbol* get_type_decl() = 0;
    virtual std::vector<Symbol> get_params_and_rt() = 0;
+   virtual Expression get_expression_to_check() = 0;
 
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -176,7 +177,7 @@ public:
 
    Features get_features()
    {
-	return features;
+	  return features;
    }
 
 
@@ -230,6 +231,11 @@ public:
       return params_and_rt;
    }
 
+   Expression get_expression_to_check()
+   {
+      return expr;
+   }
+
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
 #endif
@@ -274,6 +280,11 @@ public:
 	std::vector<Symbol> empty_list;
         return empty_list;
    } 
+
+   Expression get_expression_to_check()
+   {
+      return init;
+   }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS

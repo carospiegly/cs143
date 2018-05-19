@@ -411,19 +411,24 @@ void program_class::semant()
     SymbolTable<Symbol,Symbol> *id_to_type_symtab = new SymbolTable<Symbol,Symbol>();
     std::set<Symbol> valid_classes = classtable->get_class_set();
     std::map<Symbol,Symbol> child_to_parent_classmap = classtable->get_child_map();
+    std::map<Symbol, Class_> declared_classes_map = classtable->get_class_map();
 
     // Perform all type checking
     for(std::set<Symbol>::iterator it = valid_classes.begin(); it != valid_classes.end(); it++)
     {
         id_to_type_symtab->enterscope();
-        Symbol curr_class = *it; 
-        add_own_attributes_to_scope(curr_class, declared_classes_map, id_to_type_symtab);
-        add_parent_attributes_to_scope(child_to_parent_classmap, declared_classes_map, curr_class);
+        Symbol curr_class_symbol = *it; 
+        Class__class *curr_class = *(declared_classes_map.find(curr_class_symbol));
+        add_own_attributes_to_scope(curr_class_symbol, declared_classes_map, id_to_type_symtab);
+        add_parent_attributes_to_scope(child_to_parent_classmap, 
+                                        declared_classes_map, 
+                                        curr_class_symbol,
+                                        id_to_type_symtab);
         verify_type_of_all_class_features(  id_to_type_symtab, 
                                             method_map,
                                             classtable->semant_error(curr_class), /* ostream& error_stream */
-                                            curr_class, 
-                                            _child_to_parent_classmap,
+                                            curr_class_symbol, 
+                                            child_to_parent_classmap,
                                             declared_classes_map);
         id_to_type_symtab->exitscope(); 
     }
@@ -454,9 +459,9 @@ void program_class::verify_type_of_all_class_features(  SymbolTable<Symbol,Symbo
         Feature_class *curr_feat = curr_features->nth(i);
         if (curr_feat->feat_is_method() )
         {
-            Symbol method_type = curr_feat->expr->type_check(symtab, method_map, error_stream, curr_class_symbol, _child_to_parent_classmap);
+            Symbol method_type = curr_feat->get_expression_to_check()->type_check(symtab, method_map, error_stream, curr_class_symbol, _child_to_parent_classmap);
         } else {
-            Symbol attr_type = curr_feat->init->type_check(symtab, method_map, error_stream, curr_class_symbol, _child_to_parent_classmap);
+            Symbol attr_type = curr_feat->get_expression_to_check()->type_check(symtab, method_map, error_stream, curr_class_symbol, _child_to_parent_classmap);
         }
     }
 }
@@ -481,7 +486,8 @@ void program_class::add_own_attributes_to_scope(Symbol curr_class,
 
 void program_class::add_parent_attributes_to_scope(std::map<Symbol,Symbol> & child_to_parent_classmap, 
                                     std::map<Symbol,Class_> & declared_classes_map,
-                                    Symbol curr_class)
+                                    Symbol curr_class,
+                                    SymbolTable<Symbol,Symbol> *id_to_type_symtab)
 {
     // get the first parent
     Symbol parent = (child_to_parent_classmap.find(curr_class))->second;
