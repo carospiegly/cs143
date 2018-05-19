@@ -413,6 +413,12 @@ void program_class::semant()
     std::map<Symbol,Symbol> child_to_parent_classmap = classtable->get_child_map();
     std::map<Symbol, Class_> declared_classes_map = classtable->get_class_map();
 
+    // Add Object?, IO, Int, Str, and Bool to the child_to_parent_classmap
+    child_to_parent_classmap.insert(std::make_pair(Bool, Object));
+    child_to_parent_classmap.insert(std::make_pair(Int, Object));
+    child_to_parent_classmap.insert(std::make_pair(Str, Object));
+    child_to_parent_classmap.insert(std::make_pair(IO, Object));
+
     // Perform all type checking
     for(std::set<Symbol>::iterator it = valid_classes.begin(); it != valid_classes.end(); it++)
     {
@@ -505,40 +511,6 @@ void program_class::add_parent_attributes_to_scope(std::map<Symbol,Symbol> & chi
         parent = child_to_parent_classmap.find(parent)->second;
     }
 }
-
-
-// {
-//     // get the first parent
-//     Symbol parent = (child_to_parent_classmap.find(curr_class))->second;
-//     while( parent!= Object ){
-//         // 
-//         list_node<Feature> *curr_features = ((child_to_parent_classmap.find(parent))->second)->get_features();
-//         for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
-//         {
-//             Feature_class *curr_feat = curr_features->nth(j);
-//             if (!curr_feat->feat_is_method() )
-//             {
-//                 id_to_type_symtab->addid( curr_feat->get_name(), curr_feat->get_type_decl() );
-//             } 
-//         }
-//         Symbol new_parent = child_to_parent_classmap.find(parent)->second;
-//         while(new_parent!= Object)
-//         {
-//             list_node<Feature> *curr_features =(declared_classes_map.find(new_parent))->second->get_features();
-//             for(int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j))
-//             {
-//                 Feature_class *curr_feat = curr_features->nth(j);
-//                 if (!curr_feat->feat_is_method() )
-//                 {
-//                     id_to_type_symtab->addid( curr_feat->get_name(), curr_feat->get_type_decl() );
-//                 } 
-//             }
-//             new_parent = child_to_parent_classmap.find(new_parent)->second;
-//         }
-//     }
-// }
-
-
 
 
 
@@ -1124,7 +1096,7 @@ Symbol Expression_class::least_upper_bound (Symbol symbol1,
 }
 
 
-bool Expression_class :: is_subtypeof(  Symbol child, Symbol supposed_parent, 
+bool Expression_class::is_subtypeof(  Symbol child, Symbol supposed_parent, 
                                         std::map<Symbol,Symbol> _child_to_parent_classmap ){
 
     if (supposed_parent == Object ) return true;
