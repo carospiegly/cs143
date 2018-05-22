@@ -934,7 +934,7 @@ Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     Symbol *type_of_ID = symtab->lookup(name);
-    if( *type_of_ID == NULL)
+    if( type_of_ID == NULL)
     {
         error_stream << "This variable name was never defined";
         type = Object;
