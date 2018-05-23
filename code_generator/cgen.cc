@@ -877,10 +877,15 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 //
 //*****************************************************************
 
+
 void assign_class::code(ostream &s) {
-
-  // 
-
+  // start with initial store S
+  // evaluate expression e (right hand side of assignment), in initial store S
+  // we get back an updated store S1
+  // look up identifier in the store, get out the value
+  // build a new store, where we replace the old value with the new value
+ // we get back the new store S2, the final store
+  // result is the value v and the updated store (includes all side effects)
 }
 
 void static_dispatch_class::code(ostream &s) {
@@ -892,22 +897,21 @@ void dispatch_class::code(ostream &s) {
 void cond_class::code(ostream &s) {
 
   // if e1 then e2 else e3 fi
-  // if the predicate Bool(true)
-  // 	get back new store S1
+  // evaluate the predicate first in store S, get back store S1 
+
+ // if the predicate Bool(true)
   // In S1, we evaluate the "true" branch of the if/then/else
   // Get back a new store S2 after we evaluate e2, along with value v
   // do not evaluate e3
 
   // if the predicate Bool(False)
-  // 
-  
-
+  // evaluate e3 and do not evaluate e2
 }
 
 void loop_class::code(ostream &s) {
 
-  // If predicate Bool(false)
-  // then return void, and the value S1
+  // If predicate e1 is Bool(false)
+  // then return as the result void, and the value S1 contains side effects of evaluating e1
 
   // Evaluate in Store S
   // If predicate Bool(true)
@@ -922,6 +926,12 @@ void typcase_class::code(ostream &s) {
 }
 
 void block_class::code(ostream &s) {
+ // sequence of expressions
+ // order is enforced by the stores
+ // evaluation begins in store S, evaluate e1 in it, get back S1
+  // etc for each expression
+  // value of the block is the value of the last expression
+
 }
 
 void let_class::code(ostream &s) {
@@ -967,6 +977,8 @@ void comp_class::code(ostream &s) {
 
 void int_const_class::code(ostream& s)  
 {
+ // Create an Integer object, does not affect the store
+ // set value to the literal
   //
   // Need to be sure we have an IntEntry *, not an arbitrary Symbol
   //
@@ -975,17 +987,46 @@ void int_const_class::code(ostream& s)
 
 void string_const_class::code(ostream& s)
 {
-  // Create a String object
+  // Create a String object, does not affect the store
+ // set the value to the string literal
   emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
 }
 
 void bool_const_class::code(ostream& s)
 {
-  // Create a Bool object
+  // Create a Bool object, does not affect the store
+  // set value to either true or false
   emit_load_bool(ACC, BoolConst(val), s);
 }
 
 void new__class::code(ostream &s) {
+  // check if type is SELF_TYPE
+  // new SELF_TYPE will allocate an object with the same dynamic type as self
+  // look at current self object, allocate of that type (find out concrete class we are allocating)
+
+  // allocate n new locations to hold all n attribtues of an object (enough space for every attribute)
+  // Form the new object
+  // bind ith object to the ith location
+  // Update the store S and initialize all of the attributes to their default values
+
+  // integer default is 0
+  // bool default is false
+  // string default is empty string
+  // for any other class, default value is void
+
+  // we build a new environment (nothing to do with envirinment in which we called new)
+  // only field names of the class are in scope
+
+  // evaluate a block
+  // Build the AST for this block, call block.code()
+  // this is before we even run the initializers for the attributes
+  // we order the attributes as greatest ancestor first, so attribbutes you inherited from ancestor go first
+  // then within a class, then in the textual order in which they are listed in the class
+  // then, evaluate all of the initializers and set the resulting attribute values
+  // return the newly allocated object
+
+  // new SELF_TYPE will allocate an object with the same dynamic type as self
+
 }
 
 void isvoid_class::code(ostream &s) {
@@ -995,6 +1036,14 @@ void no_expr_class::code(ostream &s) {
 }
 
 void object_class::code(ostream &s) {
+
+  // if it is the self identifier, it just evaluates to so (self object)
+  // store unchanged
+
+  // variable evaluates to an object
+  // where is it located
+  // what object happens to be located there right now
+  // looking up a variable does not affect the store
 }
 
 
