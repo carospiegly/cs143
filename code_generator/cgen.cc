@@ -878,6 +878,9 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 //*****************************************************************
 
 void assign_class::code(ostream &s) {
+
+  // 
+
 }
 
 void static_dispatch_class::code(ostream &s) {
@@ -887,9 +890,32 @@ void dispatch_class::code(ostream &s) {
 }
 
 void cond_class::code(ostream &s) {
+
+  // if e1 then e2 else e3 fi
+  // if the predicate Bool(true)
+  // 	get back new store S1
+  // In S1, we evaluate the "true" branch of the if/then/else
+  // Get back a new store S2 after we evaluate e2, along with value v
+  // do not evaluate e3
+
+  // if the predicate Bool(False)
+  // 
+  
+
 }
 
 void loop_class::code(ostream &s) {
+
+  // If predicate Bool(false)
+  // then return void, and the value S1
+
+  // Evaluate in Store S
+  // If predicate Bool(true)
+  // Evaluate loop one more time, get back new store S1 (first loop had side effects)
+  // Now evaluate in store S1, get back value e2, and new store S2
+  // Create a new instance of the while loop rule, but start in new store this time
+ // (The new store we got from evaluating one iteration)
+
 }
 
 void typcase_class::code(ostream &s) {
@@ -899,6 +925,17 @@ void block_class::code(ostream &s) {
 }
 
 void let_class::code(ostream &s) {
+
+  // initialize new variable
+  // evaluate the variable in the store S1
+  // allocate a memory location for the new variable to live in
+  // I_new = newloc(S); // get back a fresh location not already used in store S
+  // then have body
+  // Get a new environment E
+  // evaluate e2, get new value v2, and new store S2
+  // S2 will contain value v2, after it's initialized to the proper value
+  
+
 }
 
 void plus_class::code(ostream &s) {
@@ -938,11 +975,13 @@ void int_const_class::code(ostream& s)
 
 void string_const_class::code(ostream& s)
 {
+  // Create a String object
   emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
 }
 
 void bool_const_class::code(ostream& s)
 {
+  // Create a Bool object
   emit_load_bool(ACC, BoolConst(val), s);
 }
 
