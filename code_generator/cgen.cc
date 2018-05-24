@@ -376,6 +376,37 @@ static void emit_gc_check(char *source, ostream &s)
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+int compute_num_temporaries()
+{
+// swtich statement
+	// NT(e1 + e2) = max(NT(e1), 1 + NT(e2))
+	// NT(e1 - e2) = max(NT(e1), 1 + NT(e2))
+	// NT(if e1 = e2 then e3 else e4) = max(NT(e1),1 + NT(e2), NT(e3), NT(e4))
+	// NT(id(e1,…,en) = max(NT(e1),…,NT(en))
+	// NT(int) = 0
+	// NT(id) = 0 
+
+
+}
+
+
+/*
+4 bytes for the return address
+4 bytes for the frame pointer
+4 * num_args to store pointer to each argument
+4 * NTs to store temporary values on the stack
+*/
+int compute_act_rec_num_bytes(int num_args)
+{
+	return 4 * compute_num_temporaries() + 4 + 4 + 4* num_args;
+}
+
+// act_Rec_sz = compute_act_rec_num_bytes();
+// char[act_rec_sz]
+
+
+
+
 //
 // Strings
 //
@@ -949,6 +980,15 @@ void let_class::code(ostream &s) {
 }
 
 void plus_class::code(ostream &s) {
+
+  cgen(e1)
+  emit_sw( $a0 0($sp) );
+  emit_addiu( $sp $sp -4 );
+  cgen(e2);
+  emit_lw( $t1 4($sp) );
+  emit_add( $a0 $t1 $a0)
+  emit_addiu ($sp $sp 4);
+
 }
 
 void sub_class::code(ostream &s) {
@@ -1003,6 +1043,9 @@ void new__class::code(ostream &s) {
   // check if type is SELF_TYPE
   // new SELF_TYPE will allocate an object with the same dynamic type as self
   // look at current self object, allocate of that type (find out concrete class we are allocating)
+
+  emit_object_Dot_copy_call();
+
 
   // allocate n new locations to hold all n attribtues of an object (enough space for every attribute)
   // Form the new object
