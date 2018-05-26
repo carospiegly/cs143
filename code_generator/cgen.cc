@@ -981,13 +981,14 @@ void let_class::code(ostream &s) {
 
 void plus_class::code(ostream &s) {
 
-  cgen(e1)
+  e1.cgen(s);
   emit_sw( $a0 0($sp) );
-  emit_addiu( $sp $sp -4 );
-  cgen(e2);
+  emit_addiu( stack_ptr /* dest */, stack_ptr /* src1 */, -4 /* imm */, s );
+  e2.cgen();
   emit_lw( $t1 4($sp) );
-  emit_add( $a0 $t1 $a0)
-  emit_addiu ($sp $sp 4);
+  emit_add( acc /*char *dest $a0 */, temp1 /* $t1 */, acc /* char *src2 $a0 */, s);
+
+  emit_addiu (stack_ptr, stack_ptr, 4, s );
 
 }
 
