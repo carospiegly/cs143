@@ -130,15 +130,33 @@ BoolConst truebool(TRUE);
 //
 //*********************************************************
 
+
+
+
+
+/*
+  We perform code generation in two passes:
+  - The first pass decides the object layout for each class, 
+  particularly the offset at which each attribute is stored in an object. 
+  - Using this information, the second pass recursively walks each feature 
+  and generates stack machine code for each expression.
+*/
 void program_class::cgen(ostream &os) 
 {
   // spim wants comments to start with '#'
   os << "# start of generated code\n";
 
   initialize_constants();
-  CgenClassTable *codegen_classtable = new CgenClassTable(classes, os);
-  //go through class table
-  //lay out prototype object for each class 
+
+  CgenClassTable *codegen_classtable = new CgenClassTable(classes,os);
+
+
+
+
+
+
+
+
   os << "\n# end of generated code\n";
 }
 
@@ -163,12 +181,16 @@ static void emit_load(char *dest_reg, int offset, char *source_reg, ostream& s)
     << endl;
 }
 
+// sw reg1 offset(reg2)
+// store 32 bit word in reg1 at address reg2+offset
 static void emit_store(char *source_reg, int offset, char *dest_reg, ostream& s)
 {
   s << SW << source_reg << " " << offset * WORD_SIZE << "(" << dest_reg << ")"
       << endl;
 }
 
+// li reg imm
+// reg <- imm
 static void emit_load_imm(char *dest_reg, int val, ostream& s)
 { s << LI << dest_reg << " " << val << endl; }
 
@@ -205,12 +227,18 @@ static void emit_move(char *dest_reg, char *source_reg, ostream& s)
 static void emit_neg(char *dest, char *src1, ostream& s)
 { s << NEG << dest << " " << src1 << endl; }
 
+// add reg1 reg2 reg3
+// reg1 <- reg2 + reg3
 static void emit_add(char *dest, char *src1, char *src2, ostream& s)
 { s << ADD << dest << " " << src1 << " " << src2 << endl; }
 
 static void emit_addu(char *dest, char *src1, char *src2, ostream& s)
 { s << ADDU << dest << " " << src1 << " " << src2 << endl; }
 
+// add immediate
+// addiu reg1 reg2 imm
+// reg1 <- reg2 + imm
+// u means underflow is not checked
 static void emit_addiu(char *dest, char *src1, int imm, ostream& s)
 { s << ADDIU << dest << " " << src1 << " " << imm << endl; }
 
@@ -229,6 +257,11 @@ static void emit_sll(char *dest, char *src1, int num, ostream& s)
 static void emit_jalr(char *dest, ostream& s)
 { s << JALR << "\t" << dest << endl; }
 
+// JUMP AND LINK is for a procedure call
+// GOTO a label
+// save the address of the next instruction (save where you will jump back to)
+// the last thing on the caller side
+// callee fishes out the return address from the RA register
 static void emit_jal(char *address,ostream &s)
 { s << JAL << address << endl; }
 
@@ -377,6 +410,66 @@ static void emit_gc_check(char *source, ostream &s)
 // which defines the definition and reference methods for Bools.
 //
 ///////////////////////////////////////////////////////////////////////////////
+
+
+/*
+  Optimization that makes code generation better
+  Instead of pushing and popping intermediates onto the stack, 
+  we just index into it.
+
+  Compute the number of temporaries needed for an expression.
+  Simple recursive algorithm.
+*/
+int compute_NT(Expression )
+{
+  switch expr.get_name()
+  {
+    case "plus": // NT(e1 + e2)
+      return std::max( compute_NT(e1), 1 + compute_NT(e2) );
+    
+    case "sub": // NT(e1 - e2)
+      return std::max( compute_NT(e1), 1 + compute_NT(e2) );
+    
+    case "cond": // NT(if e1 = e2 then e3 else e4) 
+      return std::max( compute_NT(e1), 1 + compute_NT(e2), compute_NT(e3), compute_NT(e4) );
+    
+    case "dispatch": // or method?  NT(id(e1,…,en)
+      int max_discovered = 0;
+      for each of the formals e_1 to e_n
+      {
+        max_discovered = std::max( compute_NT(e1), max_discovered );
+      }
+      return max_discovered;
+    
+    case "int": // NT(int)
+     return 0;
+
+    case "id": // NT(id)
+      return 0;
+
+    default:
+      std::cout << "EXPRESSION INVALID!" << std::endl;
+      break;
+  }
+}
+
+
+/*
+4 bytes for the return address
+4 bytes for the frame pointer
+4 * num_args to store pointer to each argument
+4 * NTs to store temporary values on the stack
+*/
+int compute_act_rec_num_bytes(int num_args)
+{
+	return 4 * (compute_NT() + 2 + num_args);
+}
+
+// act_Rec_sz = compute_act_rec_num_bytes();
+// char[act_rec_sz]
+
+
+
 
 //
 // Strings
@@ -886,6 +979,14 @@ void CgenClassTable::code()
 //                   - the class methods
 //                   - etc...
 
+  // str is the output stream
+
+  for(int i = nds->first(); nds->more(i); i = nds->next(i))
+  {
+    CGenNode node = classes->nth(i);
+    str << GLOBAL; myclass.code_ref(str);  str << endl;
+  }
+
 }
 
 
@@ -922,7 +1023,18 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 //*****************************************************************
 
 
+/*
+  Start with initial store S.
+  Evaluate expression e (right hand side of assignment), in initial store S.
+
+  We get back an updated store S1.
+  Look up identifier in the store, get out the value.
+  Build a new store, where we replace the old value with the new value.
+  We get back the new store S2, the final store.
+  Result is the value v and the updated store (includes all side effects).
+*/
 void assign_class::code(ostream &s) {
+
   
 
   //evaluate expression in initial store 
@@ -940,29 +1052,155 @@ void assign_class::code(ostream &s) {
   //first evaluate expression on right hand side of assignment, update store 1
   //look up store to get value??
   //look up identifier in environment, get final store
-  //store the new value in the final store 
+
+
+  expr.code();
+  // result is now in the accumulator
+
+  emit_load_address(char *dest_reg, char *address, s);
+
+  // sw reg1 offset(reg2)
+// store 32 bit word in reg1 at address reg2+offset
+  emit_store(char *source_reg, int offset, char *dest_reg, ostream& s)
+
+  
+
+
+
+
+
+// #define ZERO "$zero"    // Zero register 
+// #define ACC  "$a0"    // Accumulator 
+// #define A1   "$a1"    // For arguments to prim funcs 
+// #define SELF "$s0"    // Ptr to self (callee saves) 
+// #define T1   "$t1"    // Temporary 1 
+// #define T2   "$t2"    // Temporary 2 
+// #define T3   "$t3"    // Temporary 3 
+// #define SP   "$sp"    // Stack pointer 
+// #define FP   "$fp"    // Frame pointer 
+// #define RA   "$ra"    // Return address
+
+
+
+
 }
 
 void static_dispatch_class::code(ostream &s) {
 }
 
-void dispatch_class::code(ostream &s) {
+
+/* 
+  A FUNCTION CALL! ON THE CALLER SIDE
+  - 4*n + 4 arguments in the activation record
+  - 4 bytes per argument, and also the frame pointer
+*/
+void method_class::code(ostream &s)
+{
+  //Save the frame pointer
+  emit_store( FP, 0, SP, s);
+  // Adjust the stack
+  emit_addiu(SP, SP, -4, s);
+
+  // Generate code for all of the arguemnts
+  // save the actual parameters in reverse order
+  for(int i = formals->first(); formals->more(i); i = formals->next(i))
+  {
+    formals->nth(i)->code(s);
+    // for each of the arguments
+    // generate code for them
+    // store accumulator onto the stack
+    // add -4 to the stack
+      // save the frame pointer onto the stack
+    emit_store( ACC /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
+    emit_addiu( SP, SP, -4, s);
+  }
+  // pass in the label of the beginning of the function f
+  // jump and link
+  emit_jal(f_entry, s);
 }
 
+
+
+/* 
+  - Set up a function DEFINITION!!! ON THE CALLEE SIDE
+  - The frame pointer points to the top, not bottom of the frame
+  - The callee pops the return address, the actual arguments and the saved
+      value of the frame pointer.
+  - FP is the Frame Pointer
+  - SP is the Stack Pointer
+  - RA is the Return Address
+
+  The full activation record is the:
+    - frame pointer FP (the caller sets this up)
+    - all of the arguments (the caller sets this up)
+    - and the return address RA (callee sets this up)
+
+
+  TODO: CATCH ERROR -- dispatch on void
+*/
+void dispatch_class::code(ostream &s) {
+  // copy the stack pointer to the frame pointer
+  // we are setting up the frame pointer for THIS function activation
+  emit_move( FP /* char *dest_reg */, SP /* char *source_reg */, s);
+  // store 32 bit word in reg1 at address reg2+offset.     sw reg1 offset(reg2)
+
+  // save the return address onto the stack
+  emit_store( RA /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
+  emit_addiu( SP, SP, -4, s);
+
+  e.code();
+  // now, after the body has been executed, we restore the environment
+  emit_load( RA, 4, SP); 
+  int n = formal_list.size(); // number of args to the function
+  int z = 4 * n + 8; 
+  // return the old stack pointer (where it was before the function call)
+  emit_addiu( SP, SP, z, s);
+
+  // restore the frame pointer
+  emit_load( FP /* char *dest_reg */, 0 /* offset */, SP /* char *source_reg */, s);
+
+  // jump and link to the entry point of the function
+  emit_jr( RA, s);
+}
+
+/*
+  if e1 == 1 then e2 else e3
+
+  T1 is Temporary 1
+  ACC is the accumulator
+  
+
+*/
 void cond_class::code(ostream &s) {
 
   // if e1 then e2 else e3 fi
   // evaluate the predicate first in store S, get back store S1 
+  pred.code();
+  emit_load_imm( T1 /* char *dest_reg */, 0 /* val */, s);
+  // is the predicate true? (equal to 1?). Branch if equal (beq)
+  emit_beq( ACC /* char *src1 */, T1 /* char *src2 */, true_branch /* int label */, s);
 
  // if the predicate Bool(true)
   // In S1, we evaluate the "true" branch of the if/then/else
   // Get back a new store S2 after we evaluate e2, along with value v
   // do not evaluate e3
 
+  emit_branch( true_branch /* int l */, s);
+  then_exp.code();
+  // b end_if
+
   // if the predicate Bool(False)
   // evaluate e3 and do not evaluate e2
+  emit_branch( false_branch /* int l */, s);
+  else_exp.code();
+  // end_if
 }
 
+
+/*
+  emit_addiu( stack_ptr, stack_ptr, -4, s);
+  emit_store( acc, 0, stack_ptr, s ); // save the result onto the stack
+*/
 void loop_class::code(ostream &s) {
 
   // If predicate e1 is Bool(false)
@@ -977,7 +1215,21 @@ void loop_class::code(ostream &s) {
 
 }
 
+
+/*
+  A case expression provides a runtime type test on objects. 
+  The class tag uniquely identifies the dynamic type of the object.
+  - Generate a series of conditionals comparing the class tag of the object to 
+  the tags of the types specified in the branches of the case expression. 
+
+  Determine the branch of the case expression to evaluate -- load the class tag of
+  the object on which the case is testing and comparing that value with constants 
+  (in branch instructions).
+
+  TODO: CATCH ERROR -- case on void
+*/
 void typcase_class::code(ostream &s) {
+
 }
 
 void block_class::code(ostream &s) {
@@ -1003,10 +1255,42 @@ void let_class::code(ostream &s) {
 
 }
 
+/*
+  ACC is the accumulator
+  SP is the stack pointer
+  T1 is the Temporary 1 register
+*/
 void plus_class::code(ostream &s) {
+  e1.code(s);
+  // result now stored in accumulator
+  emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
+  emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
+  e2.code();
+  // result now stored in acculumator
+  emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
+  emit_add( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
+  emit_addiu ( SP, SP, 4, s );
 }
 
+/*
+  Subtraction code is identical to the code for addition, except we use the "sub" instruction
+  instead of the "add" instruction in the penultimate line. Only the actual operation 
+  is different
+
+  SP is stack pointer
+  ACC is accumulator
+  T1 is Temporary 1 register
+*/
 void sub_class::code(ostream &s) {
+  e1.code(s);
+  // result now stored in accumulator
+  emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
+  emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
+  e2.code();
+  // result now stored in acculumator
+  emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
+  emit_sub( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
+  emit_addiu ( SP, SP, 4, s );
 }
 
 void mul_class::code(ostream &s) {
@@ -1058,6 +1342,9 @@ void new__class::code(ostream &s) {
   // check if type is SELF_TYPE
   // new SELF_TYPE will allocate an object with the same dynamic type as self
   // look at current self object, allocate of that type (find out concrete class we are allocating)
+
+  emit_object_Dot_copy_call();
+
 
   // allocate n new locations to hold all n attribtues of an object (enough space for every attribute)
   // Form the new object
