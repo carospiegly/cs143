@@ -129,6 +129,17 @@ BoolConst truebool(TRUE);
 //
 //*********************************************************
 
+
+
+
+
+/*
+  We perform code generation in two passes:
+  - The first pass decides the object layout for each class, 
+  particularly the offset at which each attribute is stored in an object. 
+  - Using this information, the second pass recursively walks each feature 
+  and generates stack machine code for each expression.
+*/
 void program_class::cgen(ostream &os) 
 {
   // spim wants comments to start with '#'
@@ -136,6 +147,12 @@ void program_class::cgen(ostream &os)
 
   initialize_constants();
   CgenClassTable *codegen_classtable = new CgenClassTable(classes,os);
+
+
+
+
+
+
 
   os << "\n# end of generated code\n";
 }
@@ -391,17 +408,46 @@ static void emit_gc_check(char *source, ostream &s)
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-int compute_num_temporaries()
+
+/*
+  Optimization that makes code generation better
+  Instead of pushing and popping intermediates onto the stack, 
+  we just index into it.
+
+  Compute the number of temporaries needed for an expression.
+  Simple recursive algorithm.
+*/
+int compute_NT(Expression )
 {
-// swtich statement
-	// NT(e1 + e2) = max(NT(e1), 1 + NT(e2))
-	// NT(e1 - e2) = max(NT(e1), 1 + NT(e2))
-	// NT(if e1 = e2 then e3 else e4) = max(NT(e1),1 + NT(e2), NT(e3), NT(e4))
-	// NT(id(e1,…,en) = max(NT(e1),…,NT(en))
-	// NT(int) = 0
-	// NT(id) = 0 
+  switch expr.get_name()
+  {
+    case "plus": // NT(e1 + e2)
+      return std::max( compute_NT(e1), 1 + compute_NT(e2) );
+    
+    case "sub": // NT(e1 - e2)
+      return std::max( compute_NT(e1), 1 + compute_NT(e2) );
+    
+    case "cond": // NT(if e1 = e2 then e3 else e4) 
+      return std::max( compute_NT(e1), 1 + compute_NT(e2), compute_NT(e3), compute_NT(e4) );
+    
+    case "dispatch": // or method?  NT(id(e1,…,en)
+      int max_discovered = 0;
+      for each of the formals e_1 to e_n
+      {
+        max_discovered = std::max( compute_NT(e1), max_discovered );
+      }
+      return max_discovered;
+    
+    case "int": // NT(int)
+     return 0;
 
+    case "id": // NT(id)
+      return 0;
 
+    default:
+      std::cout << "EXPRESSION INVALID!" << std::endl;
+      break;
+  }
 }
 
 
@@ -413,7 +459,7 @@ int compute_num_temporaries()
 */
 int compute_act_rec_num_bytes(int num_args)
 {
-	return 4 * compute_num_temporaries() + 4 + 4 + 4* num_args;
+	return 4 * (compute_NT() + 2 + num_args);
 }
 
 // act_Rec_sz = compute_act_rec_num_bytes();
@@ -888,6 +934,14 @@ void CgenClassTable::code()
 //                   - the class methods
 //                   - etc...
 
+  // str is the output stream
+
+  for(int i = nds->first(); nds->more(i); i = nds->next(i))
+  {
+    CGenNode node = classes->nth(i);
+    str << GLOBAL; myclass.code_ref(str);  str << endl;
+  }
+
 }
 
 
@@ -924,14 +978,31 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 //*****************************************************************
 
 
+/*
+  Start with initial store S.
+  Evaluate expression e (right hand side of assignment), in initial store S.
+
+  We get back an updated store S1.
+  Look up identifier in the store, get out the value.
+  Build a new store, where we replace the old value with the new value.
+  We get back the new store S2, the final store.
+  Result is the value v and the updated store (includes all side effects).
+*/
 void assign_class::code(ostream &s) {
-  // start with initial store S
-  // evaluate expression e (right hand side of assignment), in initial store S
-  // we get back an updated store S1
-  // look up identifier in the store, get out the value
-  // build a new store, where we replace the old value with the new value
- // we get back the new store S2, the final store
-  // result is the value v and the updated store (includes all side effects)
+
+  expr.code();
+  // result is now in the accumulator
+
+  emit_load_address(char *dest_reg, char *address, s);
+
+  // sw reg1 offset(reg2)
+// store 32 bit word in reg1 at address reg2+offset
+  emit_store(char *source_reg, int offset, char *dest_reg, ostream& s)
+
+  
+
+
+
 
 
 // #define ZERO "$zero"    // Zero register 
@@ -980,7 +1051,7 @@ void method_class::code(ostream &s)
   }
   // pass in the label of the beginning of the function f
   // jump and link
-  emit_jal(f_entry);
+  emit_jal(f_entry, s);
 }
 
 
@@ -998,6 +1069,9 @@ void method_class::code(ostream &s)
     - frame pointer FP (the caller sets this up)
     - all of the arguments (the caller sets this up)
     - and the return address RA (callee sets this up)
+
+
+  TODO: CATCH ERROR -- dispatch on void
 */
 void dispatch_class::code(ostream &s) {
   // copy the stack pointer to the frame pointer
@@ -1009,7 +1083,7 @@ void dispatch_class::code(ostream &s) {
   emit_store( RA /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
   emit_addiu( SP, SP, -4, s);
 
-  e.cgen();
+  e.code();
   // now, after the body has been executed, we restore the environment
   emit_load( RA, 4, SP); 
   int n = formal_list.size(); // number of args to the function
@@ -1076,7 +1150,21 @@ void loop_class::code(ostream &s) {
 
 }
 
+
+/*
+  A case expression provides a runtime type test on objects. 
+  The class tag uniquely identifies the dynamic type of the object.
+  - Generate a series of conditionals comparing the class tag of the object to 
+  the tags of the types specified in the branches of the case expression. 
+
+  Determine the branch of the case expression to evaluate -- load the class tag of
+  the object on which the case is testing and comparing that value with constants 
+  (in branch instructions).
+
+  TODO: CATCH ERROR -- case on void
+*/
 void typcase_class::code(ostream &s) {
+
 }
 
 void block_class::code(ostream &s) {
@@ -1108,12 +1196,11 @@ void let_class::code(ostream &s) {
   T1 is the Temporary 1 register
 */
 void plus_class::code(ostream &s) {
-
-  e1.cgen(s);
+  e1.code(s);
   // result now stored in accumulator
   emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
   emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
-  e2.cgen();
+  e2.code();
   // result now stored in acculumator
   emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
   emit_add( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
@@ -1130,11 +1217,11 @@ void plus_class::code(ostream &s) {
   T1 is Temporary 1 register
 */
 void sub_class::code(ostream &s) {
-  e1.cgen(s);
+  e1.code(s);
   // result now stored in accumulator
   emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
   emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
-  e2.cgen();
+  e2.code();
   // result now stored in acculumator
   emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
   emit_sub( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
