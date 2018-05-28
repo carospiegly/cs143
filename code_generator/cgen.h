@@ -4,6 +4,14 @@
 #include "cool-tree.h"
 #include "symtab.h"
 
+struct prototype_object{
+  char* garbage_collector_tag;
+  char* class_tag;
+  char* object_size;
+  char* dispatch_pointer;
+  Features attributes; 
+};
+
 enum Basicness     {Basic, NotBasic};
 #define TRUE 1
 #define FALSE 0
@@ -42,8 +50,11 @@ private:
    void install_classes(Classes cs);
    void build_inheritance_tree();
    void set_relations(CgenNodeP nd);
+   void traverse(CgenNodeP nd);
 public:
    CgenClassTable(Classes, ostream& str);
+
+   
    void code();
    CgenNodeP root();
 };
@@ -55,6 +66,7 @@ private:
    List<CgenNode> *children;                  // Children of class
    Basicness basic_status;                    // `Basic' if class is basic
                                               // `NotBasic' otherwise
+ struct prototype_object *proto;
 
 public:
    CgenNode(Class_ c,
@@ -66,6 +78,9 @@ public:
    void set_parentnd(CgenNodeP p);
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
+   
+   struct prototype_object* get_proto() { return proto;}
+
 };
 
 class BoolConst 
