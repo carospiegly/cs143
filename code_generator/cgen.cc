@@ -706,7 +706,22 @@ void CgenClassTable::code_constants()
   code_bools(boolclasstag);
 }
 
+void CgenClassTable::traverse(CgenNodeP nd) {
+  
+  features_map.insert(std::make_pair(nd, nd->get_features()));
+  CgenNodeP parent = nd->get_parentnd(); 
 
+  while((nd!=root()) && (parent != root())){
+    features_map.insert(std::make_pair(nd, append_Features(nd->get_features(), parent->get_features())));
+    parent = nd->get_parentnd();
+  }
+
+
+  List<CgenNode> *c;
+  for( c = nd->get_children(); c != NULL; c = c->tl()) {
+   traverse(c->hd());
+  }
+}
 
 CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 {
@@ -720,7 +735,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
    install_classes(classes);
    build_inheritance_tree();
 
-
+  traverse(root());
 
      //at index 0, 1, 2, 3 etc 
    
@@ -910,30 +925,28 @@ void CgenNode::set_parentnd(CgenNodeP p)
   parentnd = p;
 }
 
-void CgenClassTable::traverse(CgenNodeP nd) {
 
-  nd->get_proto()->attributes = nd->get_features();
-  CgenNodeP parent = nd->get_parentnd(); 
-  while(parent != NULL){
-    nd->get_proto()->attributes = append_Features(nd->get_proto()->attributes, parent->get_proto()->attributes);
-    parent = nd->get_parentnd();
-  }
-  List<CgenNode> *c;
-  for( c = nd->get_children(); c != NULL; c = c->tl()) {
-   traverse(c->hd());
-  }
-}
 
 
 /*
 */
-void CgenClassTable::print_node_protobj_attrs(struct prototype_object *curr_proto)
+void CgenClassTable::print_node_attrs()
 {
-  for(int i = curr_proto->attributes->first(); 
-      curr_proto->attributes->more(i); i = curr_proto->attributes->next(i))
-  {
-    Symbol curr_attr = curr_proto->attributes->nth(i)->get_name();
+
+
+   std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
+    while(it != get_features_map().end())
+    {
+   
+      Features curr_attributes = it->second; 
+      for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
+
+
+    Symbol curr_attr = curr_attributes->nth(i)->get_name();
     str << WORD << curr_attr->get_string() << endl;
+
+  }
+  it++;
   }
 }
 
@@ -958,32 +971,10 @@ void CgenClassTable::code()
   code_constants();
 
 
-   traverse(root()); 
+  print_node_attrs();
+ 
 
-   // loop over all of the classes
-    std::queue <CgenNodeP> class_queue;
-    List<CgenNode> *c;
-    for( c = root()->get_children(); c != NULL; c = c->tl()) {
-    
-      // for each of the children of the root
-      // c is the CgenNodeP child of the root
-      print_node_protobj_attrs( c->hd()->get_proto() );
-      class_queue.push( c->hd() );
-    }
-    while (!class_queue.empty())
-    {
-      CgenNodeP curr_node = class_queue.front();
-      class_queue.pop();
-      for( c = curr_node->get_children(); c != NULL; c = c->tl()) {
-        // get out a pointer to the child of the current node I'm processing
-        print_node_protobj_attrs( c->hd()->get_proto() );
-        class_queue.push( c->hd() );
-      }        
-    }
-  
-
-
-   int i = 0;
+ 
 
    // {
    //    cout<<l->get_proto()->garbage_collector_tag <<endl;
@@ -1208,10 +1199,10 @@ void dispatch_class::code(ostream &s) {
   expr->code(s);
   // now, after the body has been executed, we restore the environment
   emit_load( RA, 4, SP, s); 
-  int n = formal_list.size(); // number of args to the function
-  int z = 4 * n + 8; 
+  //int n = formal_list.size(); // number of args to the function
+  //int z = 4 * n + 8; 
   // return the old stack pointer (where it was before the function call)
-  emit_addiu( SP, SP, z, s);
+  //emit_addiu( SP, SP, z, s);
 
   // restore the frame pointer
   emit_load( FP /* char *dest_reg */, 0 /* offset */, SP /* char *source_reg */, s);

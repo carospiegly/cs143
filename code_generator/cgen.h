@@ -3,7 +3,7 @@
 #include "emit.h"
 #include "cool-tree.h"
 #include "symtab.h"
-
+#include <map>
 struct prototype_object{
   char* garbage_collector_tag;
   char* class_tag;
@@ -53,12 +53,12 @@ private:
    void traverse(CgenNodeP nd);
 public:
    CgenClassTable(Classes, ostream& str);
-
+   std::map<CgenNodeP, Features> features_map;
    
    void code();
    CgenNodeP root();
-   void print_node_protobj_attrs(struct prototype_object *curr_proto);
-
+   void print_node_attrs();
+   std::map<CgenNodeP, Features> get_features_map() {return features_map;}
 };
 
 
@@ -69,6 +69,7 @@ private:
    Basicness basic_status;                    // `Basic' if class is basic
                                               // `NotBasic' otherwise
  struct prototype_object *proto;
+   
 
 public:
    CgenNode(Class_ c,
@@ -81,7 +82,7 @@ public:
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
    struct prototype_object* get_proto() { return proto;}
-
+   
 
 };
 
