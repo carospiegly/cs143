@@ -929,7 +929,8 @@ void CgenClassTable::traverse(CgenNodeP nd) {
 */
 void CgenClassTable::print_node_protobj_attrs(struct prototype_object *curr_proto)
 {
-  for(int i = curr_proto.attributes->first(); curr_proto.attributes->more(i); i = curr_proto.attributes->next(i))
+  for(int i = curr_proto->attributes->first(); 
+      curr_proto->attributes->more(i); i = curr_proto->attributes->next(i))
   {
     Symbol curr_attr = curr_proto->attributes->nth(i)->get_name();
     str << WORD << curr_attr->get_string() << endl;
@@ -960,7 +961,7 @@ void CgenClassTable::code()
    traverse(root()); 
 
    // loop over all of the classes
-    std::queue <CgenNodeP> class_queue;
+    std::queue <CgenNode> class_queue;
     List<CgenNode> *c;
     for( c = root()->get_children(); c != NULL; c = c->tl()) {
     {
@@ -971,11 +972,11 @@ void CgenClassTable::code()
     }
     while (!class_queue.empty())
     {
-      CgenNode curr_nodeP = class_queue.front();
+      CgenNode curr_node = class_queue.front();
       class_queue.pop();
       for( c = curr_node->get_children(); c != NULL; c = c->tl()) {
         // get out a pointer to the child of the current node I'm processing
-        CgenNodeP curr_node_child = curr_node->get_children()->nth(i);
+        CgenNode curr_node_child = curr_node->get_children()->nth(i);
         print_node_protobj_attrs( curr_node_child->get_proto() );
         class_queue.push( curr_node_child );
       }        
@@ -1018,11 +1019,11 @@ void CgenClassTable::code()
 
   // str is the output stream
 
-  for(int i = nds->first(); nds->more(i); i = nds->next(i))
-  {
-    CGenNode node = classes->nth(i);
-    str << GLOBAL; myclass.code_ref(str);  str << endl;
-  }
+  // for(int i = nds->first(); nds->more(i); i = nds->next(i))
+  // {
+  //   CGenNode node = classes->nth(i);
+  //   str << GLOBAL; myclass.code_ref(str);  str << endl;
+  // }
 
 }
 
