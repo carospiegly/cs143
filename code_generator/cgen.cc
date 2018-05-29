@@ -1114,11 +1114,11 @@ void assign_class::code(ostream &s) {
   expr->code(s);
   // result is now in the accumulator
 
-  emit_load_address(char *dest_reg, char *address, s);
+  //emit_load_address(char *dest_reg, char *address, s);
 
   // sw reg1 offset(reg2)
 // store 32 bit word in reg1 at address reg2+offset
-  emit_store(char *source_reg, int offset, char *dest_reg, ostream& s)
+  //emit_store(char *source_reg, int offset, char *dest_reg, ostream& s)
 
   
 
@@ -1146,35 +1146,35 @@ void static_dispatch_class::code(ostream &s) {
 }
 
 
-/* 
-  A FUNCTION CALL! ON THE CALLER SIDE
-  - 4*n + 4 arguments in the activation record
-  - 4 bytes per argument, and also the frame pointer
-*/
-void method_class::code(ostream &s)
-{
-  //Save the frame pointer
-  emit_store( FP, 0, SP, s);
-  // Adjust the stack
-  emit_addiu(SP, SP, -4, s);
+// /* 
+//   A FUNCTION CALL! ON THE CALLER SIDE
+//   - 4*n + 4 arguments in the activation record
+//   - 4 bytes per argument, and also the frame pointer
+// */
+// void method_class::code(ostream &s)
+// {
+//   //Save the frame pointer
+//   emit_store( FP, 0, SP, s);
+//   // Adjust the stack
+//   emit_addiu(SP, SP, -4, s);
 
-  // Generate code for all of the arguemnts
-  // save the actual parameters in reverse order
-  for(int i = formals->first(); formals->more(i); i = formals->next(i))
-  {
-    formals->nth(i)->code(s);
-    // for each of the arguments
-    // generate code for them
-    // store accumulator onto the stack
-    // add -4 to the stack
-      // save the frame pointer onto the stack
-    emit_store( ACC /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
-    emit_addiu( SP, SP, -4, s);
-  }
-  // pass in the label of the beginning of the function f
-  // jump and link
-  emit_jal(f_entry, s);
-}
+//   // Generate code for all of the arguemnts
+//   // save the actual parameters in reverse order
+//   for(int i = actuals->first(); actuals->more(i); i = actuals->next(i))
+//   {
+//    actuals->nth(i)->code(s);
+//     // for each of the arguments
+//     // generate code for them
+//     // store accumulator onto the stack
+//     // add -4 to the stack
+//       // save the frame pointer onto the stack
+//     emit_store( ACC /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
+//     emit_addiu( SP, SP, -4, s);
+//   }
+//   // pass in the label of the beginning of the function f
+//   // jump and link
+//   emit_jal(f_entry, s);
+// }
 
 
 
@@ -1205,9 +1205,9 @@ void dispatch_class::code(ostream &s) {
   emit_store( RA /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
   emit_addiu( SP, SP, -4, s);
 
-  e->code(s);
+  expr->code(s);
   // now, after the body has been executed, we restore the environment
-  emit_load( RA, 4, SP); 
+  emit_load( RA, 4, SP, s); 
   int n = formal_list.size(); // number of args to the function
   int z = 4 * n + 8; 
   // return the old stack pointer (where it was before the function call)
@@ -1230,27 +1230,29 @@ void dispatch_class::code(ostream &s) {
 */
 void cond_class::code(ostream &s) {
 
-  // if e1 then e2 else e3 fi
-  // evaluate the predicate first in store S, get back store S1 
-  pred->code(s);
-  emit_load_imm( T1 /* char *dest_reg */, 0 /* val */, s);
-  // is the predicate true? (equal to 1?). Branch if equal (beq)
-  emit_beq( ACC /* char *src1 */, T1 /* char *src2 */, true_branch /* int label */, s);
+ //  // if e1 then e2 else e3 fi
+ //  // evaluate the predicate first in store S, get back store S1 
+ //  pred->code(s);
+ //  emit_load_imm( T1 /* char *dest_reg */, 0 /* val */, s);
+ //  // is the predicate true? (equal to 1?). Branch if equal (beq)
+ //  emit_beq( ACC /* char *src1 */, T1 /* char *src2 */, true_branch /* int label */, s);
 
- // if the predicate Bool(true)
-  // In S1, we evaluate the "true" branch of the if/then/else
-  // Get back a new store S2 after we evaluate e2, along with value v
-  // do not evaluate e3
+ // // if the predicate Bool(true)
+ //  // In S1, we evaluate the "true" branch of the if/then/else
+ //  // Get back a new store S2 after we evaluate e2, along with value v
+ //  // do not evaluate e3
 
-  emit_branch( true_branch /* int l */, s);
-  then_exp->code(s);
-  // b end_if
+ //  emit_label_ref(int l, s)
 
-  // if the predicate Bool(False)
-  // evaluate e3 and do not evaluate e2
-  emit_branch( false_branch /* int l */, s);
-  else_exp->code(s);
-  // end_if
+ //  emit_branch( true_branch /* int l */, s);
+ //  then_exp->code(s);
+ //  // b end_if
+
+ //  // if the predicate Bool(False)
+ //  // evaluate e3 and do not evaluate e2
+ //  emit_branch( false_branch /* int l */, s);
+ //  else_exp->code(s);
+ //  // end_if
 }
 
 
