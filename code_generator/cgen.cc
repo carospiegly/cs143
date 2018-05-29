@@ -930,6 +930,7 @@ void CgenClassTable::traverse(CgenNodeP nd) {
 void CgenClassTable::print_node_protobj_attrs(struct prototype_object *curr_proto)
 {
   for(int i = curr_proto.attributes->first(); curr_proto.attributes->more(i); i = curr_proto.attributes->next(i))
+  {
     Symbol curr_attr = curr_proto->attributes->nth(i)->get_name();
     str << WORD << curr_attr->get_string() << endl;
   }
