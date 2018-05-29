@@ -707,7 +707,7 @@ void CgenClassTable::code_constants()
 }
 
 void CgenClassTable::traverse(CgenNodeP nd) {
-  
+  if(nd->basic() == Basic){
   features_map.insert(std::make_pair(nd, nd->get_features()));
   CgenNodeP parent = nd->get_parentnd(); 
 
@@ -716,7 +716,7 @@ void CgenClassTable::traverse(CgenNodeP nd) {
     parent = nd->get_parentnd();
   }
 
-
+}
   List<CgenNode> *c;
   for( c = nd->get_children(); c != NULL; c = c->tl()) {
    traverse(c->hd());
@@ -937,7 +937,7 @@ void CgenClassTable::print_node_attrs()
    std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
     while(it != get_features_map().end())
     {
-   
+    cout<<"start"<<endl;
       Features curr_attributes = it->second; 
       for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
 
@@ -948,6 +948,7 @@ void CgenClassTable::print_node_attrs()
   }
   it++;
   }
+  cout<<"end"<<endl;
 }
 
 

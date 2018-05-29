@@ -4,13 +4,7 @@
 #include "cool-tree.h"
 #include "symtab.h"
 #include <map>
-struct prototype_object{
-  char* garbage_collector_tag;
-  char* class_tag;
-  char* object_size;
-  char* dispatch_pointer;
-  Features attributes; 
-};
+
 
 enum Basicness     {Basic, NotBasic};
 #define TRUE 1
@@ -81,7 +75,6 @@ public:
    void set_parentnd(CgenNodeP p);
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
-   struct prototype_object* get_proto() { return proto;}
    
 
 };
