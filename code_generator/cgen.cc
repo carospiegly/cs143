@@ -26,6 +26,7 @@
 #include "cgen_gc.h"
 #include <map>
 #include <vector>
+#include <queue>
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
@@ -917,20 +918,38 @@ void CgenNode::set_parentnd(CgenNodeP p)
 
 void CgenClassTable::traverse(CgenNodeP nd) {
 
-nd->get_proto()->attributes = nd->get_features();
-CgenNodeP parent = nd->get_parentnd(); 
-while(parent != NULL){
- nd->get_proto()->attributes = append_Features(nd->get_proto()->attributes, parent->get_proto()->attributes);
- parent = nd->get_parentnd();
-}
-List<CgenNode> *c;
-for( c = nd->get_children(); c != NULL; c = c->tl()) {
+  nd->get_proto()->attributes = nd->get_features();
+  CgenNodeP parent = nd->get_parentnd(); 
+  while(parent != NULL){
+    nd->get_proto()->attributes = append_Features(nd->get_proto()->attributes, parent->get_proto()->attributes);
+    parent = nd->get_parentnd();
+  }
+  List<CgenNode> *c;
+  for( c = nd->get_children(); c != NULL; c = c->tl()) {
    traverse(c->hd());
   }
 }
 
 
+/*
+*/
+void CgenClassTable::print_node_protobj_attrs(struct prototype_object curr_proto)
+{
+  for(int i = curr_proto.attributes->first(); curr_proto.attributes->more(i); i = curr_proto.attributes->next(i))
+    Symbol curr_attr = curr_proto.attributes->nth(i)->get_name();
+    str << WORD << curr_attr->get_string() << endl;
+  }
+}
 
+
+/*
+  Start at root
+  Repeat
+    - Push all of its children onto some queue
+    - We loop through queue and add each of its children to the queue
+    - Print out the attributes of each child
+  When the queue is empty, you've looked at everything
+*/
 void CgenClassTable::code()
 {
   if (cgen_debug) cout << "coding global data" << endl;
@@ -943,7 +962,30 @@ void CgenClassTable::code()
   code_constants();
 
 
-   traverse(root());
+   traverse(root()); 
+
+   // loop over all of the classes
+    std::queue <CgenNodeP> class_queue;
+    List<CgenNode> *c;
+    for( c = root()->get_children(); c != NULL; c = c->tl()) {
+    {
+      // for each of the children of the root
+      CgenNodeP root_child = 
+      print_node_protobj_attrs( curr_node_child->get_proto() );
+      class_queue.push( root_child );
+    }
+    while (!class_queue.empty())
+    {
+      CgenNode curr_nodeP = class_queue.front();
+      class_queue.pop();
+      for( c = curr_node->get_children(); c != NULL; c = c->tl()) {
+        // get out a pointer to the child of the current node I'm processing
+        CgenNodeP curr_node_child = curr_node->get_children()->nth(i);
+        print_node_protobj_attrs( curr_node_child->get_proto() );
+        class_queue.push( curr_node_child );
+      }        
+    }
+
 
    int i = 0;
 
@@ -1343,7 +1385,7 @@ void new__class::code(ostream &s) {
   // new SELF_TYPE will allocate an object with the same dynamic type as self
   // look at current self object, allocate of that type (find out concrete class we are allocating)
 
-  emit_object_Dot_copy_call();
+  // emit_object_Dot_copy_call();
 
 
   // allocate n new locations to hold all n attribtues of an object (enough space for every attribute)
