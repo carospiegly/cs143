@@ -961,10 +961,10 @@ void CgenClassTable::code()
    traverse(root()); 
 
    // loop over all of the classes
-    std::queue <CgenNode> class_queue;
+    std::queue <CgenNodeP> class_queue;
     List<CgenNode> *c;
     for( c = root()->get_children(); c != NULL; c = c->tl()) {
-    {
+    
       // for each of the children of the root
       // c is the CgenNodeP child of the root
       print_node_protobj_attrs( c->hd()->get_proto() );
@@ -972,15 +972,15 @@ void CgenClassTable::code()
     }
     while (!class_queue.empty())
     {
-      CgenNode curr_node = class_queue.front();
+      CgenNodeP curr_node = class_queue.front();
       class_queue.pop();
       for( c = curr_node->get_children(); c != NULL; c = c->tl()) {
         // get out a pointer to the child of the current node I'm processing
-        CgenNode curr_node_child = curr_node->get_children()->nth(i);
-        print_node_protobj_attrs( curr_node_child->get_proto() );
-        class_queue.push( curr_node_child );
+        print_node_protobj_attrs( c->hd()->get_proto() );
+        class_queue.push( c->hd() );
       }        
     }
+  
 
 
    int i = 0;
@@ -1092,7 +1092,7 @@ void assign_class::code(ostream &s) {
   //look up identifier in environment, get final store
 
 
-  expr.code();
+  expr->code();
   // result is now in the accumulator
 
   emit_load_address(char *dest_reg, char *address, s);
@@ -1186,7 +1186,7 @@ void dispatch_class::code(ostream &s) {
   emit_store( RA /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
   emit_addiu( SP, SP, -4, s);
 
-  e.code();
+  e->code();
   // now, after the body has been executed, we restore the environment
   emit_load( RA, 4, SP); 
   int n = formal_list.size(); // number of args to the function
@@ -1213,7 +1213,7 @@ void cond_class::code(ostream &s) {
 
   // if e1 then e2 else e3 fi
   // evaluate the predicate first in store S, get back store S1 
-  pred.code();
+  pred->code();
   emit_load_imm( T1 /* char *dest_reg */, 0 /* val */, s);
   // is the predicate true? (equal to 1?). Branch if equal (beq)
   emit_beq( ACC /* char *src1 */, T1 /* char *src2 */, true_branch /* int label */, s);
@@ -1224,13 +1224,13 @@ void cond_class::code(ostream &s) {
   // do not evaluate e3
 
   emit_branch( true_branch /* int l */, s);
-  then_exp.code();
+  then_exp->code();
   // b end_if
 
   // if the predicate Bool(False)
   // evaluate e3 and do not evaluate e2
   emit_branch( false_branch /* int l */, s);
-  else_exp.code();
+  else_exp->code();
   // end_if
 }
 
@@ -1299,11 +1299,11 @@ void let_class::code(ostream &s) {
   T1 is the Temporary 1 register
 */
 void plus_class::code(ostream &s) {
-  e1.code(s);
+  e1->code(s);
   // result now stored in accumulator
   emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
   emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
-  e2.code();
+  e2->code();
   // result now stored in acculumator
   emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
   emit_add( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
@@ -1320,11 +1320,11 @@ void plus_class::code(ostream &s) {
   T1 is Temporary 1 register
 */
 void sub_class::code(ostream &s) {
-  e1.code(s);
+  e1->code(s);
   // result now stored in accumulator
   emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
   emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
-  e2.code();
+  e2->code();
   // result now stored in acculumator
   emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
   emit_sub( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
