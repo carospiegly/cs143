@@ -1111,7 +1111,7 @@ void assign_class::code(ostream &s) {
   //look up identifier in environment, get final store
 
 
-  expr->code();
+  expr->code(s);
   // result is now in the accumulator
 
   emit_load_address(char *dest_reg, char *address, s);
@@ -1205,7 +1205,7 @@ void dispatch_class::code(ostream &s) {
   emit_store( RA /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
   emit_addiu( SP, SP, -4, s);
 
-  e->code();
+  e->code(s);
   // now, after the body has been executed, we restore the environment
   emit_load( RA, 4, SP); 
   int n = formal_list.size(); // number of args to the function
@@ -1232,7 +1232,7 @@ void cond_class::code(ostream &s) {
 
   // if e1 then e2 else e3 fi
   // evaluate the predicate first in store S, get back store S1 
-  pred->code();
+  pred->code(s);
   emit_load_imm( T1 /* char *dest_reg */, 0 /* val */, s);
   // is the predicate true? (equal to 1?). Branch if equal (beq)
   emit_beq( ACC /* char *src1 */, T1 /* char *src2 */, true_branch /* int label */, s);
@@ -1243,13 +1243,13 @@ void cond_class::code(ostream &s) {
   // do not evaluate e3
 
   emit_branch( true_branch /* int l */, s);
-  then_exp->code();
+  then_exp->code(s);
   // b end_if
 
   // if the predicate Bool(False)
   // evaluate e3 and do not evaluate e2
   emit_branch( false_branch /* int l */, s);
-  else_exp->code();
+  else_exp->code(s);
   // end_if
 }
 
@@ -1322,7 +1322,7 @@ void plus_class::code(ostream &s) {
   // result now stored in accumulator
   emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
   emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
-  e2->code();
+  e2->code(s);
   // result now stored in acculumator
   emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
   emit_add( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
@@ -1343,7 +1343,7 @@ void sub_class::code(ostream &s) {
   // result now stored in accumulator
   emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
   emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
-  e2->code();
+  e2->code(s);
   // result now stored in acculumator
   emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
   emit_sub( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
