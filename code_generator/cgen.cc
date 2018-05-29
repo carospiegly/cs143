@@ -149,7 +149,7 @@ void program_class::cgen(ostream &os)
   CgenClassTable *codegen_classtable = new CgenClassTable(classes,os);
 
 
-
+  str << CLASSNAMETAB << LABEL;
 
 
 
@@ -1095,7 +1095,7 @@ void dispatch_class::code(ostream &s) {
   emit_load( FP /* char *dest_reg */, 0 /* offset */, SP /* char *source_reg */, s);
 
   // jump and link to the entry point of the function
-  emit_jr( RA, s);
+  emit_return( s); // jumps to RA
 }
 
 /*
