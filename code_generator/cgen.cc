@@ -24,7 +24,8 @@
 
 #include "cgen.h"
 #include "cgen_gc.h"
-
+#include <map>
+#include <vector>
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
 
@@ -146,10 +147,12 @@ void program_class::cgen(ostream &os)
   os << "# start of generated code\n";
 
   initialize_constants();
+
   CgenClassTable *codegen_classtable = new CgenClassTable(classes,os);
 
 
   str << CLASSNAMETAB << LABEL;
+
 
 
 
@@ -709,6 +712,7 @@ void CgenClassTable::code_constants()
 }
 
 
+
 CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 {
    stringclasstag = 0 /* Change to your String class tag here */;
@@ -721,6 +725,10 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
    install_classes(classes);
    build_inheritance_tree();
 
+
+
+     //at index 0, 1, 2, 3 etc 
+   
    code();
    exitscope();
 }
@@ -907,6 +915,20 @@ void CgenNode::set_parentnd(CgenNodeP p)
   parentnd = p;
 }
 
+void CgenClassTable::traverse(CgenNodeP nd) {
+
+nd->get_proto()->attributes = nd->get_features();
+CgenNodeP parent = nd->get_parentnd(); 
+while(parent != NULL){
+ nd->get_proto()->attributes = append_Features(nd->get_proto()->attributes, parent->get_proto()->attributes);
+ parent = nd->get_parentnd();
+}
+List<CgenNode> *c;
+for( c = nd->get_children(); c != NULL; c = c->tl()) {
+   traverse(c->hd());
+  }
+}
+
 
 
 void CgenClassTable::code()
@@ -919,6 +941,29 @@ void CgenClassTable::code()
 
   if (cgen_debug) cout << "coding constants" << endl;
   code_constants();
+
+
+   traverse(root());
+
+   int i = 0;
+
+   // {
+   //    cout<<l->get_proto()->garbage_collector_tag <<endl;
+   //    l->get_proto()->class_tag = i;
+   //    i++;
+
+   //    for(int i = l->get_proto()->attributes->first(); l->get_proto()->attributes->more(i); i = cl->get_proto()->attributes->next(i)){
+   //      if (!i->is_method()) cout << i << endl;
+
+  
+    
+     
+
+      //check each attribute, if its a method, add to dispatch table
+      //if its an attribute, dont move it
+      //
+ 
+   
 
 //                 Add your code to emit
 //                   - prototype objects
@@ -990,6 +1035,25 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 */
 void assign_class::code(ostream &s) {
 
+  
+
+  //evaluate expression in initial store 
+   //emit_store(char *source_reg, int offset, char *dest_reg, s)
+
+  // start with initial store S
+  // evaluate expression e (right hand side of assignment), in initial store S
+  // we get back an updated store S1
+  // look up identifier in the store, get out the value
+  // build a new store, where we replace the old value with the new value
+ // we get back the new store S2, the final store
+  // result is the value v and the updated store (includes all side effects)
+
+  //go over this one together
+  //first evaluate expression on right hand side of assignment, update store 1
+  //look up store to get value??
+  //look up identifier in environment, get final store
+
+
   expr.code();
   // result is now in the accumulator
 
@@ -1015,6 +1079,7 @@ void assign_class::code(ostream &s) {
 // #define SP   "$sp"    // Stack pointer 
 // #define FP   "$fp"    // Frame pointer 
 // #define RA   "$ra"    // Return address
+
 
 
 
