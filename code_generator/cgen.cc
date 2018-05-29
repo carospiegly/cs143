@@ -965,9 +965,9 @@ void CgenClassTable::code()
     for( c = root()->get_children(); c != NULL; c = c->tl()) {
     {
       // for each of the children of the root
-      CgenNodeP root_child = 
-      print_node_protobj_attrs( curr_node_child->get_proto() );
-      class_queue.push( root_child );
+      // c is the CgenNodeP child of the root
+      print_node_protobj_attrs( c->hd()->get_proto() );
+      class_queue.push( c->hd() );
     }
     while (!class_queue.empty())
     {
