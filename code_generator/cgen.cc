@@ -407,61 +407,61 @@ static void emit_gc_check(char *source, ostream &s)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-/*
-  Optimization that makes code generation better
-  Instead of pushing and popping intermediates onto the stack, 
-  we just index into it.
+// /*
+//   Optimization that makes code generation better
+//   Instead of pushing and popping intermediates onto the stack, 
+//   we just index into it.
 
-  Compute the number of temporaries needed for an expression.
-  Simple recursive algorithm.
-*/
-int compute_NT(Expression )
-{
-  switch( expr.get_name() )
-  {
-    case "plus": // NT(e1 + e2)
-      return std::max( compute_NT(e1), 1 + compute_NT(e2) );
+//   Compute the number of temporaries needed for an expression.
+//   Simple recursive algorithm.
+// */
+// int compute_NT(Expression )
+// {
+//   switch( expr.get_name() )
+//   {
+//     case "plus": // NT(e1 + e2)
+//       return std::max( compute_NT(e1), 1 + compute_NT(e2) );
     
-    case "sub": // NT(e1 - e2)
-      return std::max( compute_NT(e1), 1 + compute_NT(e2) );
+//     case "sub": // NT(e1 - e2)
+//       return std::max( compute_NT(e1), 1 + compute_NT(e2) );
     
-    case "cond": // NT(if e1 = e2 then e3 else e4) 
-      return std::max( compute_NT(e1), 1 + compute_NT(e2), compute_NT(e3), compute_NT(e4) );
+//     case "cond": // NT(if e1 = e2 then e3 else e4) 
+//       return std::max( compute_NT(e1), 1 + compute_NT(e2), compute_NT(e3), compute_NT(e4) );
     
-    case "dispatch": // or method?  NT(id(e1,…,en)
-      int max_discovered = 0;
-      for each of the formals e_1 to e_n
-      {
-        max_discovered = std::max( compute_NT(e1), max_discovered );
-      }
-      return max_discovered;
+//     case "dispatch": // or method?  NT(id(e1,…,en)
+//       int max_discovered = 0;
+//       for each of the formals e_1 to e_n
+//       {
+//         max_discovered = std::max( compute_NT(e1), max_discovered );
+//       }
+//       return max_discovered;
     
-    case "int": // NT(int)
-     return 0;
+//     case "int": // NT(int)
+//      return 0;
 
-    case "id": // NT(id)
-      return 0;
+//     case "id": // NT(id)
+//       return 0;
 
-    default:
-      std::cout << "EXPRESSION INVALID!" << std::endl;
-      break;
-  }
-}
+//     default:
+//       std::cout << "EXPRESSION INVALID!" << std::endl;
+//       break;
+//   }
+// }
 
 
-/*
-4 bytes for the return address
-4 bytes for the frame pointer
-4 * num_args to store pointer to each argument
-4 * NTs to store temporary values on the stack
-*/
-int compute_act_rec_num_bytes(int num_args)
-{
-	return 4 * (compute_NT() + 2 + num_args);
-}
+// /*
+// 4 bytes for the return address
+// 4 bytes for the frame pointer
+// 4 * num_args to store pointer to each argument
+// 4 * NTs to store temporary values on the stack
+// */
+// int compute_act_rec_num_bytes(int num_args)
+// {
+// 	return 4 * (compute_NT() + 2 + num_args);
+// }
 
-// act_Rec_sz = compute_act_rec_num_bytes();
-// char[act_rec_sz]
+// // act_Rec_sz = compute_act_rec_num_bytes();
+// // char[act_rec_sz]
 
 
 
@@ -927,10 +927,10 @@ void CgenClassTable::traverse(CgenNodeP nd) {
 
 /*
 */
-void CgenClassTable::print_node_protobj_attrs(struct prototype_object curr_proto)
+void CgenClassTable::print_node_protobj_attrs(struct prototype_object *curr_proto)
 {
   for(int i = curr_proto.attributes->first(); curr_proto.attributes->more(i); i = curr_proto.attributes->next(i))
-    Symbol curr_attr = curr_proto.attributes->nth(i)->get_name();
+    Symbol curr_attr = curr_proto->attributes->nth(i)->get_name();
     str << WORD << curr_attr->get_string() << endl;
   }
 }
