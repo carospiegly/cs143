@@ -1199,8 +1199,10 @@ void dispatch_class::code(ostream &s) {
   expr->code(s);
   // now, after the body has been executed, we restore the environment
   emit_load( RA, 4, SP, s); 
-  //int n = formal_list.size(); // number of args to the function
-  //int z = 4 * n + 8; 
+
+  int n = actual->len(); // number of args to the function
+  int z = 4 * n + 8; 
+
   // return the old stack pointer (where it was before the function call)
   //emit_addiu( SP, SP, z, s);
 
