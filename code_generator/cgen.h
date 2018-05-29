@@ -57,6 +57,8 @@ public:
    
    void code();
    CgenNodeP root();
+   void print_node_protobj_attrs(struct prototype_object *curr_proto);
+
 };
 
 
@@ -78,8 +80,8 @@ public:
    void set_parentnd(CgenNodeP p);
    CgenNodeP get_parentnd() { return parentnd; }
    int basic() { return (basic_status == Basic); }
-   
    struct prototype_object* get_proto() { return proto;}
+
 
 };
 
