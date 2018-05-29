@@ -1009,6 +1009,25 @@ void CgenClassTable::code()
 //                   - dispatch tables
 //
 
+   // for each of the classes
+    // print the dispatch table for this class
+      // print the name of the class + << DISPTAB_SUFFIX << ":";
+      // Symbol sym;
+      // emit_disptable_ref(sym, str);
+      // str << WORD << 
+
+    // emit_init_ref(Symbol sym, ostream& s)
+    // { s << sym << CLASSINIT_SUFFIX; }
+
+    // emit_label_ref(int l, ostream &s)
+    // { s << "label" << l; }
+
+    // emit_protobj_ref(Symbol sym, ostream& s)
+    // { s << sym << PROTOBJ_SUFFIX; }
+
+    // emit_method_ref(Symbol classname, Symbol methodname, ostream& s)
+    // { s << classname << METHOD_SEP << methodname; }
+
   if (cgen_debug) cout << "coding global text" << endl;
   code_global_text();
 
