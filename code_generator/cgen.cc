@@ -152,12 +152,6 @@ void program_class::cgen(ostream &os)
   CgenClassTable *codegen_classtable = new CgenClassTable(classes,os);
 
 
-  str << CLASSNAMETAB << LABEL;
-
-
-
-
-
   os << "\n# end of generated code\n";
 }
 
@@ -423,7 +417,7 @@ static void emit_gc_check(char *source, ostream &s)
 */
 int compute_NT(Expression )
 {
-  switch expr.get_name()
+  switch( expr.get_name() )
   {
     case "plus": // NT(e1 + e2)
       return std::max( compute_NT(e1), 1 + compute_NT(e2) );
