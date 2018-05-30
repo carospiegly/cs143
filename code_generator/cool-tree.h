@@ -52,6 +52,7 @@ public:
     virtual bool feat_is_method() = 0;
     virtual Symbol get_feature_name() = 0;
     virtual Symbol get_type_decl() = 0;
+    virtual Expression get_feat_expr() = 0;
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -207,6 +208,11 @@ bool feat_is_method()
    Symbol get_type_decl(){
       return return_type;
    }
+   Expression get_feat_expr()
+   {
+     return expr;
+   }
+
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -243,6 +249,11 @@ public:
    {
         return type_decl;
    }
+   Expression get_feat_expr()
+   {
+     return init;
+   }
+
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
