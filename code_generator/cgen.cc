@@ -944,53 +944,37 @@ std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
 */
 void CgenClassTable::print_node_attrs()
 {
+  std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
+  while(it != get_features_map().end())
+  {
+    str << it->first->get_name() << PROTOBJ_SUFFIX << endl;
+    Features curr_attributes = it->second;
 
-
-   std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
-    while(it != get_features_map().end())
-    {
-    str<< it->first->get_name() << PROTOBJ_SUFFIX << endl;
-      Features curr_attributes = it->second;
-
-  int count = 0;
-  for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
-  Feature count_at = curr_attributes->nth(j);
-  
-    if(!count_at->feat_is_method()){
-    count++;
+    int count = 0;
+    for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
+      Feature count_at = curr_attributes->nth(j);
+      if(!count_at->feat_is_method()){
+        count++;
+      }
     }
-  }
-  str << WORD << class_tags[it->first] << endl;
-  str << WORD << count+3 << endl; //size
-  
-  str << WORD << it->first->get_name() << DISPTAB_SUFFIX << endl;
-  for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
-
-
-    Feature curr_attr = curr_attributes->nth(i);
-    Symbol attr_type = curr_attr->get_type_decl();
-  
-    
-    
-    if(attr_type == Bool) {
-
-      str << WORD; falsebool.code_ref(str); str<<endl;
-      
-    }else if(attr_type == Str){
-      
-      str << WORD; (stringtable.lookup_string(""))->code_ref(str); str<<endl;
-
-    } else if (attr_type == Int){
-      str << WORD; (inttable.lookup_string("0"))->code_ref(str); str<<endl;
-    } else if ( !curr_attr->feat_is_method()){
-
-      str << WORD << EMPTYSLOT <<endl;
-
-    }   
-
-  }
-  str << WORD << -1 <<endl;
-  it++;
+    str << WORD << class_tags[it->first] << endl;
+    str << WORD << count+3 << endl; //size
+    str << WORD << it->first->get_name() << DISPTAB_SUFFIX << endl;
+    for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
+      Feature curr_attr = curr_attributes->nth(i);
+      Symbol attr_type = curr_attr->get_type_decl();
+      if(attr_type == Bool) {
+        str << WORD; falsebool.code_ref(str); str<<endl;
+      }else if(attr_type == Str){
+        str << WORD; (stringtable.lookup_string(""))->code_ref(str); str<<endl;
+      } else if (attr_type == Int){
+        str << WORD; (inttable.lookup_string("0"))->code_ref(str); str<<endl;
+      } else if ( !curr_attr->feat_is_method()){
+        str << WORD << EMPTYSLOT <<endl;
+      }   
+    }
+    str << WORD << -1 <<endl;
+    it++;
   }
 }
 
