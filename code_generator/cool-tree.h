@@ -50,8 +50,8 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
     virtual bool feat_is_method() = 0;
-    virtual Symbol get_name() = 0;
-
+    virtual Symbol get_feature_name() = 0;
+    virtual Symbol get_type_decl() = 0;
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -200,9 +200,12 @@ bool feat_is_method()
    {
       return true;
    }
-   Symbol get_name()
+   Symbol get_feature_name()
    {
         return name;
+   }
+   Symbol get_type_decl(){
+      return return_type;
    }
 
 #ifdef Feature_SHARED_EXTRAS
@@ -232,9 +235,13 @@ public:
    {
       return false;
    }
-   Symbol get_name()
+   Symbol get_feature_name()
    {
         return name;
+   }
+   Symbol get_type_decl()
+   {
+        return type_decl;
    }
 
 #ifdef Feature_SHARED_EXTRAS

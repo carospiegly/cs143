@@ -5,6 +5,7 @@
 Class C {
         a : Int;
         b : Bool;
+        d : String;
         init(x : Int, y : Bool) : C {
            {
                 a <- x;

@@ -942,8 +942,22 @@ void CgenClassTable::print_node_attrs()
       for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
 
 
-    Symbol curr_attr = curr_attributes->nth(i)->get_name();
-    str << WORD << curr_attr->get_string() << endl;
+    Feature curr_attr = curr_attributes->nth(i);
+    Symbol attr_type = curr_attr->get_type_decl();
+
+    if(attr_type == Bool) {
+
+      str << WORD; falsebool.code_ref(str); str<<endl;
+      
+    }else if(attr_type == Str){
+      
+      str << WORD; (stringtable.lookup_string(""))->code_ref(str); str<<endl;
+
+    } else if (attr_type == Int){
+      str << WORD; (inttable.lookup_string("0"))->code_ref(str); str<<endl;
+    }
+   
+    
 
   }
   it++;
@@ -964,6 +978,7 @@ void CgenClassTable::code()
 {
   if (cgen_debug) cout << "coding global data" << endl;
   code_global_data();
+
 
   if (cgen_debug) cout << "choosing gc" << endl;
   code_select_gc();
