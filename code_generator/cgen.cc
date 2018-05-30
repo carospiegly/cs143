@@ -996,8 +996,6 @@ void CgenClassTable::code()
   print_node_attrs();
  
 
-  print_methods(); 
-
    // {
    //    cout<<l->get_proto()->garbage_collector_tag <<endl;
    //    l->get_proto()->class_tag = i;
@@ -1056,7 +1054,7 @@ void CgenClassTable::code()
   //   CGenNode node = classes->nth(i);
   //   str << GLOBAL; myclass.code_ref(str);  str << endl;
   // }
-
+  print_methods();
 }
 
 
@@ -1066,18 +1064,39 @@ void CgenClassTable::print_methods()
 	std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
 	while(it != get_features_map().end())
 	{
-		str<< it->first->get_name() << PROTOBJ_SUFFIX << endl;
+		str<< it->first->get_name() << CLASSINIT_SUFFIX << endl;
+		print_class_init_code();
 		Features curr_attributes = it->second;
 		for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
 			Feature curr_feat = curr_attributes->nth(j);
 			if( curr_feat->feat_is_method()){
-    				str << "FOUND A METHOD:" << endl; //curr_feat->get_name()->get_string() << endl;
-				str << WORD << class_tags[it->first] << endl;
+				str << it->first->get_name() << "." << curr_feat->get_feature_name()->get_string() << endl;
+				curr_feat->get_feat_expr()->code(str);
 			}
 		}
 		it++;
 	}
 }
+
+void CgenClassTable::print_class_init_code()
+{
+	emit_addiu(SP,SP,-12,str);
+	emit_store(FP,12,SP,str);
+	emit_store(SELF,8,SP,str);
+	emit_store(RA,4,SP,str);
+	emit_addiu(FP,SP,16,str);
+	emit_move(SELF,ACC,str);
+	emit_jal("Object_init",str);
+	emit_move(ACC,SELF,str);
+	emit_load(FP,12,SP,str);
+	emit_load(SELF,8,SP,str);
+	emit_load(RA,4,SP,str);
+	emit_addiu(SP,SP,12,str);
+	emit_return(str);	
+
+}
+
+
 
 CgenNodeP CgenClassTable::root()
 {
