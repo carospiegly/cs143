@@ -1421,8 +1421,7 @@ void new__class::code(ostream &s) {
   // new SELF_TYPE will allocate an object with the same dynamic type as self
   // look at current self object, allocate of that type (find out concrete class we are allocating)
 
-  // emit_object_Dot_copy_call();
-
+  emit_jal( "Object.copy", s);
 
   // allocate n new locations to hold all n attribtues of an object (enough space for every attribute)
   // Form the new object
