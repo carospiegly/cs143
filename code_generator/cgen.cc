@@ -1012,7 +1012,7 @@ void CgenClassTable::code()
   print_node_attrs();
  
 
- 
+  print_methods(); 
 
    // {
    //    cout<<l->get_proto()->garbage_collector_tag <<endl;
@@ -1075,6 +1075,25 @@ void CgenClassTable::code()
 
 }
 
+
+void CgenClassTable::print_methods()
+{
+	str << "PRINTING METHODS!" << endl;
+	std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
+	while(it != get_features_map().end())
+	{
+		str<< it->first->get_name() << PROTOBJ_SUFFIX << endl;
+		Features curr_attributes = it->second;
+		for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
+			Feature curr_feat = curr_attributes->nth(j);
+			if( curr_feat->feat_is_method()){
+    				str << "FOUND A METHOD:" << endl; //curr_feat->get_name()->get_string() << endl;
+				str << WORD << class_tags[it->first] << endl;
+			}
+		}
+		it++;
+	}
+}
 
 CgenNodeP CgenClassTable::root()
 {
