@@ -711,10 +711,12 @@ void CgenClassTable::traverse(CgenNodeP nd) {
   features_map.insert(std::make_pair(nd, nd->get_features()));
   CgenNodeP parent = nd->get_parentnd(); 
 
-  while((nd!=root()) && (parent != root())){
+if(nd!=root()){
+ 
     features_map.insert(std::make_pair(nd, append_Features(nd->get_features(), parent->get_features())));
-    parent = nd->get_parentnd();
-  }
+
+  
+}
 
 }
   List<CgenNode> *c;
@@ -937,14 +939,27 @@ void CgenClassTable::print_node_attrs()
    std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
     while(it != get_features_map().end())
     {
-    cout<<"start"<<endl;
-      Features curr_attributes = it->second; 
+    str<< it->first->get_name() << PROTOBJ_SUFFIX << endl;
+      Features curr_attributes = it->second;
+
+ int count = 0;
+ for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
+  Feature count_at = curr_attributes->nth(j);
+  if(!count_at->feat_is_method()){
+    count++;
+  }
+ }
+str << WORD << count+3 << endl; //size
+str << WORD << count+3 << endl;
+ str << WORD << it->first->get_name() << DISPTAB_SUFFIX << endl;
       for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
 
 
     Feature curr_attr = curr_attributes->nth(i);
     Symbol attr_type = curr_attr->get_type_decl();
-
+  
+    
+    
     if(attr_type == Bool) {
 
       str << WORD; falsebool.code_ref(str); str<<endl;
@@ -955,25 +970,20 @@ void CgenClassTable::print_node_attrs()
 
     } else if (attr_type == Int){
       str << WORD; (inttable.lookup_string("0"))->code_ref(str); str<<endl;
-    }
-   
-    
+    } else if ( !curr_attr->feat_is_method()){
+
+      str << WORD << EMPTYSLOT <<endl;
+
+    }   
 
   }
+  str << WORD << -1 <<endl;
   it++;
   }
-  cout<<"end"<<endl;
 }
 
 
-/*
-  Start at root
-  Repeat
-    - Push all of its children onto some queue
-    - We loop through queue and add each of its children to the queue
-    - Print out the attributes of each child
-  When the queue is empty, you've looked at everything
-*/
+
 void CgenClassTable::code()
 {
   if (cgen_debug) cout << "coding global data" << endl;

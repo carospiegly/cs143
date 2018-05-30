@@ -6,6 +6,7 @@ Class C {
         a : Int;
         b : Bool;
         d : String;
+        e : C;
         init(x : Int, y : Bool) : C {
            {
                 a <- x;
@@ -14,8 +15,12 @@ Class C {
            }
         };
 };
+Class A inherits C{
+i: Int;
+};
 
 Class Main {
+        b : C;
         main():C {
           (new C).init(1,true)
         };
