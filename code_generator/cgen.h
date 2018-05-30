@@ -48,11 +48,15 @@ private:
 public:
    CgenClassTable(Classes, ostream& str);
    std::map<CgenNodeP, Features> features_map;
-   
+   std::map< CgenNodeP, int> class_tags;
    void code();
    CgenNodeP root();
    void print_node_attrs();
+   void print_class_name_tab();
    std::map<CgenNodeP, Features> get_features_map() {return features_map;}
+   int class_tag;
+   void init_class_tag(){ class_tag = 3; }
+   int increase_class_tag(){ class_tag = class_tag + 1; return class_tag;}
 };
 
 

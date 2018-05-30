@@ -707,6 +707,8 @@ void CgenClassTable::code_constants()
 }
 
 void CgenClassTable::traverse(CgenNodeP nd) {
+ 
+  class_tags.insert(std::make_pair( nd, increase_class_tag()));
   if(nd->basic() == Basic){
   features_map.insert(std::make_pair(nd, nd->get_features()));
   CgenNodeP parent = nd->get_parentnd(); 
@@ -728,15 +730,15 @@ if(nd!=root()){
 CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 {
    stringclasstag = 0 /* Change to your String class tag here */;
-   intclasstag =    0 /* Change to your Int class tag here */;
-   boolclasstag =   0 /* Change to your Bool class tag here */;
+   intclasstag =    1 /* Change to your Int class tag here */;
+   boolclasstag =   2 /* Change to your Bool class tag here */;
 
    enterscope();
    if (cgen_debug) cout << "Building CgenClassTable" << endl;
    install_basic_classes();
    install_classes(classes);
    build_inheritance_tree();
-
+init_class_tag();
   traverse(root());
 
      //at index 0, 1, 2, 3 etc 
@@ -928,7 +930,15 @@ void CgenNode::set_parentnd(CgenNodeP p)
 }
 
 
-
+void CgenClassTable::print_class_name_tab(){
+str<<CLASSNAMETAB<<endl;
+std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
+    while(it != class_tags.end())
+    {
+    str << WORD; (stringtable.lookup_string(it->first->get_name()->get_string()))->code_ref(str); str<<endl;
+    it++;
+  }
+}
 
 /*
 */
@@ -942,17 +952,19 @@ void CgenClassTable::print_node_attrs()
     str<< it->first->get_name() << PROTOBJ_SUFFIX << endl;
       Features curr_attributes = it->second;
 
- int count = 0;
- for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
+  int count = 0;
+  for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
   Feature count_at = curr_attributes->nth(j);
-  if(!count_at->feat_is_method()){
+  
+    if(!count_at->feat_is_method()){
     count++;
+    }
   }
- }
-str << WORD << count+3 << endl; //size
-str << WORD << count+3 << endl;
- str << WORD << it->first->get_name() << DISPTAB_SUFFIX << endl;
-      for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
+  str << WORD << class_tags[it->first] << endl;
+  str << WORD << count+3 << endl; //size
+  
+  str << WORD << it->first->get_name() << DISPTAB_SUFFIX << endl;
+  for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
 
 
     Feature curr_attr = curr_attributes->nth(i);
@@ -996,7 +1008,7 @@ void CgenClassTable::code()
   if (cgen_debug) cout << "coding constants" << endl;
   code_constants();
 
-
+  print_class_name_tab();
   print_node_attrs();
  
 
