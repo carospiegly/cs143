@@ -14,9 +14,11 @@ Class C {
                 self;
            }
         };
+       foo(): SELF_TYPE { self };
 };
 Class A inherits C{
 i: Int;
+foo(): SELF_TYPE { self };
 };
 
 Class Main {
