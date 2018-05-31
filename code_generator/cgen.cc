@@ -1133,12 +1133,12 @@ void CgenClassTable::code()
 
 void CgenClassTable::print_methods()
 {
-	str << "PRINTING METHODS!" << endl;
 	std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
 	while(it != get_features_map().end())
 	{
-		str<< it->first->get_name() << CLASSINIT_SUFFIX << endl;
-		print_class_init_code();
+		str<< it->first->get_name() << CLASSINIT_SUFFIX << ":" << endl;
+		bool is_object_init = ( strcmp(it->first->get_name()->get_string(), "Object")==0 );
+		print_class_init_code( is_object_init);
 		Features curr_attributes = it->second;
 		for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
 			Feature curr_feat = curr_attributes->nth(j);
@@ -1151,25 +1151,36 @@ void CgenClassTable::print_methods()
 	}
 }
 
-void CgenClassTable::print_class_init_code()
+void CgenClassTable::print_class_init_code(bool is_object_init)
 {
-	// push the  stack ptr by 12 bytes
+	// (reg1 <- reg2 + imm) -- push the stack ptr down by 12 bytes
 	emit_addiu(SP,SP,-12,str);
-	// 
-	emit_store(FP,12,SP,str);
+	// sw reg1 offset(reg2)
+	// store 32 bit word in reg1 at address reg2+offset 
+	emit_store(FP,3,SP,str);
 	// store what was in the SELF register at 8 above stack ptr
-	emit_store(SELF,8,SP,str);
-	// store what was 4 above stack ptr into return address
-	emit_store(RA,4,SP,str);
+	emit_store(SELF,2,SP,str);
+	// store what was in return address to 4 above stack ptr
+	emit_store(RA,1,SP,str);
 	// make the frame ptr now stack_ptr + 16
 	emit_addiu(FP,SP,16,str);
-	// 
+	// move what was in accumulator into the SELF register
 	emit_move(SELF,ACC,str);
-	emit_jal("Object_init",str);
+	// procedure call
+	// // save the address of the next instruction (save where you will jump back to)
+	if (!is_object_init)
+	{
+		emit_jal("Object_init",str);
+	}
+	// move SELF register contents into the accumulator
 	emit_move(ACC,SELF,str);
-	emit_load(FP,12,SP,str);
-	emit_load(SELF,8,SP,str);
-	emit_load(RA,4,SP,str);
+	// load what was 12 above stack_ptr into the frame_ptr
+	emit_load(FP,3,SP,str);
+	// load 12 above stack_ptr into the frame pointer
+	emit_load(SELF,2,SP,str);
+	//  load what was 4 above the satck pointer into the return address
+	emit_load(RA,1,SP,str);
+	// push the stack pointer back up to restore state
 	emit_addiu(SP,SP,12,str);
 	emit_return(str);	
 }
