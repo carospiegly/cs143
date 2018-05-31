@@ -55,7 +55,8 @@ public:
    void print_class_name_tab();
    void print_dispatch_tables();
    void print_methods();
-
+int get_attribute_offset (std::string attribute, CgenNodeP nd);
+int get_method_offset (std::string method_name, CgenNodeP nd);
    void print_class_obj_tab();
 
    void print_class_init_code(bool is_object_init);

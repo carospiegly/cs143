@@ -7,23 +7,19 @@ Class C {
         b : Bool;
         d : String;
         e : C;
-        init(x : Int, y : Bool) : C {
+        foo(x : Int) : Int {
            {
                 a <- x;
-                b <- y;
-                self;
            }
         };
-       foo(): SELF_TYPE { self };
 };
 Class A inherits C{
 i: Int;
-foo(): SELF_TYPE { self };
 };
 
 Class Main {
         b : C;
-        main():C {
-          (new C).init(1,true)
+        main():Int {
+          (new C).foo(1)
         };
 };
