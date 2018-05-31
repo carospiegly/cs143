@@ -1080,11 +1080,17 @@ void CgenClassTable::print_methods()
 
 void CgenClassTable::print_class_init_code()
 {
+	// push the  stack ptr by 12 bytes
 	emit_addiu(SP,SP,-12,str);
+	// 
 	emit_store(FP,12,SP,str);
+	// store what was in the SELF register at 8 above stack ptr
 	emit_store(SELF,8,SP,str);
+	// store what was 4 above stack ptr into return address
 	emit_store(RA,4,SP,str);
+	// make the frame ptr now stack_ptr + 16
 	emit_addiu(FP,SP,16,str);
+	// 
 	emit_move(SELF,ACC,str);
 	emit_jal("Object_init",str);
 	emit_move(ACC,SELF,str);
@@ -1093,7 +1099,6 @@ void CgenClassTable::print_class_init_code()
 	emit_load(RA,4,SP,str);
 	emit_addiu(SP,SP,12,str);
 	emit_return(str);	
-
 }
 
 
