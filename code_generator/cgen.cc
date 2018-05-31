@@ -34,11 +34,21 @@ class GlobalCGenState;
 
 class GlobalCGenState
 {
+  private:
+        int label_cntr;
+
   public:
 	CgenClassTable *classtableptr;	
+	CgenNodeP curr_cgen_node;
+	SymbolTable<Symbol,Symbol> *symtab;
+        void init_label_cntr() { label_cntr = -1; } 
+	int increment_label_cntr() { return label_cntr++; }
 };
 
 GlobalCGenState cgen_state;
+
+void restore_stack_after_call(ostream &s);
+void setup_stack_for_call(ostream &s);
 
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
@@ -157,8 +167,13 @@ void program_class::cgen(ostream &os)
   // spim wants comments to start with '#'
   os << "# start of generated code\n";
 
+  cgen_state.init_label_cntr();
+  // Set up the symbol table, must have an initial scope to add things to
+  cgen_state.symtab = new SymbolTable<Symbol,Symbol>();
+  //cgen_state.symtab->enterscope();
+  
   initialize_constants();
-
+  
   CgenClassTable *codegen_classtable = new CgenClassTable(classes,os);
 
 
@@ -186,6 +201,8 @@ static void emit_load(char *dest_reg, int offset, char *source_reg, ostream& s)
     << endl;
 }
 
+
+// FROM REGISTER TO MEMORY!!!!
 // sw reg1 offset(reg2)
 // store 32 bit word in reg1 at address reg2+offset
 static void emit_store(char *source_reg, int offset, char *dest_reg, ostream& s)
@@ -790,7 +807,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
   intclasstag =    1 /* Change to your Int class tag here */;
   boolclasstag =   2 /* Change to your Bool class tag here */;
 
-  enterscope();
+  
   if (cgen_debug) cout << "Building CgenClassTable" << endl;
   install_basic_classes();
   install_classes(classes);
@@ -801,7 +818,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
   //at index 0, 1, 2, 3 etc 
 
   code();
-  exitscope();
+  //cgen_state.symtab->exitscope();
 }
 
 void CgenClassTable::install_basic_classes()
@@ -1215,6 +1232,7 @@ void CgenClassTable::print_methods()
 	std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
 	while(it != get_features_map().end())
 	{
+		cgen_state.curr_cgen_node = it->first;
 		str<< it->first->get_name() << CLASSINIT_SUFFIX << ":" << endl;
 		bool is_object_init = ( strcmp(it->first->get_name()->get_string(), "Object")==0 );
 		print_class_init_code( is_object_init);
@@ -1232,19 +1250,9 @@ void CgenClassTable::print_methods()
 
 void CgenClassTable::print_class_init_code(bool is_object_init)
 {
-	// (reg1 <- reg2 + imm) -- push the stack ptr down by 12 bytes
-	emit_addiu(SP,SP,-12,str);
-	// sw reg1 offset(reg2)
-	// store 32 bit word in reg1 at address reg2+offset 
-	emit_store(FP,3,SP,str);
-	// store what was in the SELF register at 8 above stack ptr
-	emit_store(SELF,2,SP,str);
-	// store what was in return address to 4 above stack ptr
-	emit_store(RA,1,SP,str);
-	// make the frame ptr now stack_ptr + 16
-	emit_addiu(FP,SP,16,str);
+	setup_stack_for_call(str);
 	// move what was in accumulator into the SELF register
-	emit_move(SELF,ACC,str);
+	//emit_move(SELF,ACC,str);
 	// procedure call
 	// // save the address of the next instruction (save where you will jump back to)
 	if (!is_object_init)
@@ -1253,16 +1261,8 @@ void CgenClassTable::print_class_init_code(bool is_object_init)
 		emit_jal("Object_init",str);
 	}
 	// move SELF register contents into the accumulator
-	emit_move(ACC,SELF,str);
-	// load what was 12 above stack_ptr into the frame_ptr
-	emit_load(FP,3,SP,str);
-	// load 12 above stack_ptr into the frame pointer
-	emit_load(SELF,2,SP,str);
-	//  load what was 4 above the satck pointer into the return address
-	emit_load(RA,1,SP,str);
-	// push the stack pointer back up to restore state
-	emit_addiu(SP,SP,12,str);
-	emit_return(str);	
+	//emit_move(ACC,SELF,str);
+	restore_stack_after_call(str);
 }
 
 
@@ -1312,7 +1312,6 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 */
 void assign_class::code(ostream &s) {
 
-  
 
   //evaluate expression in initial store 
    //emit_store(char *source_reg, int offset, char *dest_reg, s)
@@ -1339,27 +1338,6 @@ void assign_class::code(ostream &s) {
   // sw reg1 offset(reg2)
 // store 32 bit word in reg1 at address reg2+offset
   //emit_store(char *source_reg, int offset, char *dest_reg, ostream& s)
-
-  
-
-
-
-
-
-// #define ZERO "$zero"    // Zero register 
-// #define ACC  "$a0"    // Accumulator 
-// #define A1   "$a1"    // For arguments to prim funcs 
-// #define SELF "$s0"    // Ptr to self (callee saves) 
-// #define T1   "$t1"    // Temporary 1 
-// #define T2   "$t2"    // Temporary 2 
-// #define T3   "$t3"    // Temporary 3 
-// #define SP   "$sp"    // Stack pointer 
-// #define FP   "$fp"    // Frame pointer 
-// #define RA   "$ra"    // Return address
-
-
-
-
 }
 
 void static_dispatch_class::code(ostream &s) {
@@ -1373,10 +1351,6 @@ void static_dispatch_class::code(ostream &s) {
 // */
 void dispatch_class::code(ostream &s)
 {
-
- s << "WE ARE IN THE dispatch CLASS!!" << endl;
- s << cgen_state.classtableptr->features_map.size() << endl;
-
   //Save the frame pointer
   emit_store( FP, 0, SP, s);
   // Adjust the stack
@@ -1398,11 +1372,25 @@ void dispatch_class::code(ostream &s)
   // pass in the label of the beginning of the function f
   // jump and link
   
+  expr->code(s);
+  // expression result should now be in the accumulator 
+  // MAKE SURE THE XPRESSION DID NOT RETURN NUL
 
-  //int offs = cgen_state.classtableptr->get_method_offset ( name->get_string() /*method name*/, CgenNodeP nd);
+  // ALSO CHECK FOR ONE OF THE 3 RUNTIME ERRORS
 
-// REPLACE THIS WITH THE NAME OF THE LABEL IN THE DISPATCH TABLE
-  emit_jal( name->get_string(), s);
+  int offs = cgen_state.classtableptr->get_method_offset ( name->get_string() /*method name*/, cgen_state.curr_cgen_node );
+  int label_id = cgen_state.increment_label_cntr();
+  emit_label_ref( label_id, s);
+
+
+  emit_label_def( label_id, s);
+  // SELF/OBJECT will already be in the accumulator
+  emit_load(T1 /*dst */, 8 /*offs*/, ACC /*src*/, s);
+  emit_load(T1 , offs, T1, s); // WALK ALONG THE DISPATCH TABLE UNTIL YOU FIND WHAT YOU WANT
+  emit_jalr(T1, s);
+
+  // restore stack???
+
 }
 
 
@@ -1421,38 +1409,68 @@ void dispatch_class::code(ostream &s)
     - all of the arguments (the caller sets this up)
     - and the return address RA (callee sets this up)
 
-
   TODO: CATCH ERROR -- dispatch on void
 */
 void method_class::code(ostream &s) {
 
-  // copy the stack pointer to the frame pointer
-  // we are setting up the frame pointer for THIS function activation
-  emit_move( FP /* char *dest_reg */, SP /* char *source_reg */, s);
-  // store 32 bit word in reg1 at address reg2+offset.     sw reg1 offset(reg2)
-
-  // save the return address onto the stack
-  emit_store( RA /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
-  emit_addiu( SP, SP, -4, s);
-
+  setup_stack_for_call(s);
+  s << "WE ENTERED THE SCOPE IN METHODCLASS!" << endl;
   // make sure a0 points to self
-
+  //cgen_state.symtab->enterscope();
+  // add all the formals to the symbol table
+  //for(int i = formals->first(); formals->more(i); i = formals->next(i))
+  //{
+  //  cgen_state.symtab->addid( formals->nth(i)->get_name(), formals->nth(i)->get_type_decl() );
+  //}
   expr->code(s);
   // now, after the body has been executed, we restore the environment
-  emit_load( RA, 4, SP, s); 
-
-  int n = formals->len(); // number of args to the function
-  int z = 4 * n + 8; 
-
-  // return the old stack pointer (where it was before the function call)
-  //emit_addiu( SP, SP, z, s);
-
-  // restore the frame pointer
-  emit_load( FP /* char *dest_reg */, 0 /* offset */, SP /* char *source_reg */, s);
-
-  // jump and link to the entry point of the function
-  emit_return( s); // jumps to RA
+  restore_stack_after_call(s);
+  //cgen_state.symtab->exitscope();
 }
+
+
+void setup_stack_for_call(ostream &s)
+{
+	// (reg1 <- reg2 + imm) -- push the stack ptr down by 12 bytes
+	emit_addiu(SP,SP,-12,s);
+	// sw reg1 offset(reg2)
+	// store 32 bit word in reg1 at address reg2+offset 
+	emit_store(FP,3,SP,s);
+	// store what was in the SELF register at 8 above stack ptr
+	emit_store(SELF,2,SP,s);
+	// store what was in return address to 4 above stack ptr
+	emit_store(RA,1,SP,s);
+	// make the frame ptr now stack_ptr + 16
+	emit_addiu(FP,SP,16,s);
+	// move what was in accumulator into the SELF register
+	emit_move(SELF,ACC,s);
+}
+
+/*
+	We restore the frame:
+	- before and after method, 
+	- before and after init
+
+	Restore the frame pointer
+	Then jump and link to the entry point of the function
+	LOAD(DEST_REG, OFFSET, SRC_REG);
+*/
+void restore_stack_after_call(ostream &s)
+{
+  // move SELF register contents into the accumulator
+  emit_move(ACC,SELF,s);
+  // load what was 12 above stack_ptr into the frame_ptr
+  emit_load(FP,3,SP,s);
+  // load 12 above stack_ptr into the frame pointer
+  emit_load(SELF,2,SP,s);
+  //  load what was 4 above the satck pointer into the return address
+  emit_load(RA,1,SP,s);
+  // push the stack pointer back up to restore state
+  emit_addiu(SP,SP,12,s);
+  // jump and link to the entry point of the function
+  emit_return(s); // jumps to RA
+}
+
 
 /*
   if e1 == 1 then e2 else e3
@@ -1636,13 +1654,24 @@ void lt_class::code(ostream &s) {
 }
 
 /*
-b if equal
+beq if equal
+
+USE THE BUILT IN RUNTIME TEST FROM COOL RUNTIME
+
+COPY THE REFERENCE COMPILER SOLUTION equality_test
+
 */
 void eq_class::code(ostream &s) {
+
+
 }
+
+
 
 void leq_class::code(ostream &s) {
 }
+
+
 
 void comp_class::code(ostream &s) {
 }
@@ -1676,6 +1705,9 @@ void new__class::code(ostream &s) {
   // new SELF_TYPE will allocate an object with the same dynamic type as self
   // look at current self object, allocate of that type (find out concrete class we are allocating)
 
+ // GET THE NAME OF THE PROTOTYPE OBJECT
+ // 
+
   //emit_load( ACC, prototype_object_addr, s);
 
   emit_jal( "Object.copy", s);
@@ -1692,6 +1724,9 @@ void new__class::code(ostream &s) {
 
   // we build a new environment (nothing to do with envirinment in which we called new)
   // only field names of the class are in scope
+
+  // GET THE CLASSNAME
+
   //emit_jal( CLASSNAME, "_init" );
   // evaluate a block -- list of init expressions
   // Build the AST for this block, call block.code()
