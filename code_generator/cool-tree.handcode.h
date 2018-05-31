@@ -68,6 +68,10 @@ Symbol get_filename() { return filename; }             \
 void dump_with_types(ostream&,int);                    
 
 
+#define method_EXTRAS	\
+void code(ostream&);
+
+
 #define Feature_EXTRAS                                        \
 virtual void dump_with_types(ostream&,int) = 0; 
 

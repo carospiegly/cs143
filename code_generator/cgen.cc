@@ -1303,7 +1303,7 @@ void static_dispatch_class::code(ostream &s) {
 //   - 4*n + 4 arguments in the activation record
 //   - 4 bytes per argument, and also the frame pointer
 // */
-void method_class::code(ostream &s)
+void dispatch_class::code(ostream &s)
 {
   //Save the frame pointer
   emit_store( FP, 0, SP, s);
@@ -1312,9 +1312,9 @@ void method_class::code(ostream &s)
 
   // Generate code for all of the arguemnts
   // save the actual parameters in reverse order
-  for(int i = actuals->first(); actuals->more(i); i = actuals->next(i))
+  for(int i = actual->first(); actual->more(i); i = actual->next(i))
   {
-   actuals->nth(i)->code(s);
+    actual->nth(i)->code(s);
     // for each of the arguments
     // generate code for them
     // store accumulator onto the stack
@@ -1325,7 +1325,8 @@ void method_class::code(ostream &s)
   }
   // pass in the label of the beginning of the function f
   // jump and link
-  emit_jal(f_entry, s);
+  // REPLACE THIS WITH THE NAME OF THE LABEL IN THE DISPATCH TABLE
+  emit_jal( name->get_string(), s);
 }
 
 
@@ -1347,7 +1348,7 @@ void method_class::code(ostream &s)
 
   TODO: CATCH ERROR -- dispatch on void
 */
-void dispatch_class::code(ostream &s) {
+void method_class::code(ostream &s) {
   // copy the stack pointer to the frame pointer
   // we are setting up the frame pointer for THIS function activation
   emit_move( FP /* char *dest_reg */, SP /* char *source_reg */, s);
@@ -1363,7 +1364,7 @@ void dispatch_class::code(ostream &s) {
   // now, after the body has been executed, we restore the environment
   emit_load( RA, 4, SP, s); 
 
-  int n = actual->len(); // number of args to the function
+  int n = formals->len(); // number of args to the function
   int z = 4 * n + 8; 
 
   // return the old stack pointer (where it was before the function call)
@@ -1509,20 +1510,36 @@ void sub_class::code(ostream &s) {
 }
 
 void mul_class::code(ostream &s) {
-
-
+  e1->code(s);
+  // result now stored in accumulator
+  emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
+  emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
+  e2->code(s);
+  // result now stored in acculumator
+  emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
+  emit_mul( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
+  emit_addiu ( SP, SP, 4, s );
 }
 
 void divide_class::code(ostream &s) {
-
-
-emit_div(char *dest, char *src1, char *src2, ostream& s)
-emit_mul(char *dest, char *src1, char *src2, ostream& s)
-
-
+  e1->code(s);
+  // result now stored in accumulator
+  emit_store( ACC /* char *source_reg */, 0 /* offset */, SP /* char *dest_reg */, s);
+  emit_addiu( SP /* dest */, SP /* src1 */, -4 /* imm */, s );
+  e2->code(s);
+  // result now stored in acculumator
+  emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
+  emit_mul( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
+  emit_addiu ( SP, SP, 4, s );
 }
 
+/*
+ Load -1 into the register T1, and then multiply by -1.
+*/
 void neg_class::code(ostream &s) {
+  e1->code(s);
+  emit_load_imm(T1, -1, s);
+  emit_mul(ACC, T1, ACC, s);
 }
 
 void lt_class::code(ostream &s) {
@@ -1566,7 +1583,7 @@ void new__class::code(ostream &s) {
   // new SELF_TYPE will allocate an object with the same dynamic type as self
   // look at current self object, allocate of that type (find out concrete class we are allocating)
 
-  emit_load( ACC, prototype_object_addr );
+  //emit_load( ACC, prototype_object_addr, s);
 
   emit_jal( "Object.copy", s);
 
@@ -1582,8 +1599,7 @@ void new__class::code(ostream &s) {
 
   // we build a new environment (nothing to do with envirinment in which we called new)
   // only field names of the class are in scope
-
-  emit_jal( CLASSNAME "_init" );
+  //emit_jal( CLASSNAME, "_init" );
   // evaluate a block -- list of init expressions
   // Build the AST for this block, call block.code()
   // this is before we even run the initializers for the attributes
