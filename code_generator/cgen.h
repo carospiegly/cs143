@@ -55,8 +55,10 @@ public:
    void print_class_name_tab();
    void print_dispatch_tables();
    void print_methods();
+
    void print_class_obj_tab();
-   void print_class_init_code();
+
+   void print_class_init_code(bool is_object_init);
    std::map<CgenNodeP, Features> get_features_map() {return features_map;}
    int class_tag;
    void init_class_tag(){ class_tag = 3; }
