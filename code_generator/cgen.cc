@@ -1446,6 +1446,16 @@ void loop_class::code(ostream &s) {
 */
 void typcase_class::code(ostream &s) {
 
+  // loop over each of the cases
+  // find the one that is the closest ancestor
+  for(int i = cases->first(); cases->more(i); i = cases->next(i))
+  {
+    //Case* curr_case = cases->nth(i);
+    // emit_label_def( FOR EACH CASE )
+    // emit_label_ref( FOR EACH CASE )
+    // emit_jal( TO THE CLOSEST ANCESTOR )
+    // emit_branch( BACK TO THE ESAC) 
+  }
 }
 
 void block_class::code(ostream &s) {
