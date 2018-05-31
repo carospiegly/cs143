@@ -1381,11 +1381,11 @@ void dispatch_class::code(ostream &s)
   int offs = cgen_state.classtableptr->get_method_offset ( name->get_string() /*method name*/, cgen_state.curr_cgen_node );
   int label_id = cgen_state.increment_label_cntr();
   emit_label_ref( label_id, s);
-
+  s << "THE LABEL ID WAS" << label_id << endl;
 
   emit_label_def( label_id, s);
   // SELF/OBJECT will already be in the accumulator
-  emit_load(T1 /*dst */, 8 /*offs*/, ACC /*src*/, s);
+  emit_load(T1 /*dst */, 2 /*offs*/, ACC /*src*/, s);
   emit_load(T1 , offs, T1, s); // WALK ALONG THE DISPATCH TABLE UNTIL YOU FIND WHAT YOU WANT
   emit_jalr(T1, s);
 
