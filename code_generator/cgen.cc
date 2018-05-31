@@ -707,72 +707,81 @@ void CgenClassTable::code_constants()
   code_bools(boolclasstag);
 }
 
+
+/*
+  Traverse receives one node at a time, from root to leaves
+  Start class tags at 3 (bc Int,Bool,String are 0,1,2 )
+  class_tags is a map
+
+  Features map: nodes->Features
+*/
 void CgenClassTable::traverse(CgenNodeP nd) {
  
   class_tags.insert(std::make_pair( nd, increase_class_tag()));
 
 
-
- if(nd == root()){ features_map.insert(std::make_pair(nd, nd->get_features()));
-  Features feats = nd->get_features();
- for(int i = feats->first(); feats->more(i); i = feats->next(i)){
+  // get all of the features for the current node we are at
+  if(nd == root()){ features_map.insert(std::make_pair(nd, nd->get_features()));
+    Features feats = nd->get_features();
+    for(int i = feats->first(); feats->more(i); i = feats->next(i)){
       Feature feat = feats->nth(i);
-    if(feat->feat_is_method()){
-     nd->method_map.insert(std::make_pair( feat->get_feature_name()->get_string() , nd));
-   }
-
-  }
-
-
+      if(feat->feat_is_method()){
+        // every single node has its own method map
+        // add to the dispatch table!
+        nd->method_map.insert(std::make_pair( feat->get_feature_name()->get_string() , nd));
+      }
+    }
   }
   CgenNodeP parent = nd->get_parentnd(); 
 
-if(nd!=root()){
-    
+  // if you're root, it's messy and a separate case to handle
+  if(nd!=root()){
 
-Features feats = nd->get_features();
- for(int i = feats->first(); feats->more(i); i = feats->next(i)){
-      Feature feat = feats->nth(i);
-    if(feat->feat_is_method()){
-     nd->method_map.insert(std::make_pair( feat->get_feature_name()->get_string() , nd));
-   }
+  // separate root case
+  Features feats = nd->get_features();
+  for(int i = feats->first(); feats->more(i); i = feats->next(i)){
+  Feature feat = feats->nth(i);
+  if(feat->feat_is_method()){
+  nd->method_map.insert(std::make_pair( feat->get_feature_name()->get_string() , nd));
+  }
 
   }
 
-std::map< std::string, CgenNodeP>::iterator it = (parent->method_map.begin());
- while(it != parent->method_map.end())
-    {
-      nd->method_map.insert(std::make_pair(it->first, it->second)); 
-      it++;
+  // just for your parent (the non-root case, when you have a parent)
+  std::map< std::string, CgenNodeP>::iterator it = (parent->method_map.begin());
+  while(it != parent->method_map.end())
+  {
+  nd->method_map.insert(std::make_pair(it->first, it->second)); 
+  it++;
   }
   features_map.insert(std::make_pair(nd, append_Features(nd->get_features(), parent->get_features())));  
-}
+  }
 
 
   List<CgenNode> *c;
   for( c = nd->get_children(); c != NULL; c = c->tl()) {
-   traverse(c->hd());
+  traverse(c->hd());
   }
 }
 
 CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 {
-   stringclasstag = 0 /* Change to your String class tag here */;
-   intclasstag =    1 /* Change to your Int class tag here */;
-   boolclasstag =   2 /* Change to your Bool class tag here */;
+  stringclasstag = 0 /* Change to your String class tag here */;
+  intclasstag =    1 /* Change to your Int class tag here */;
+  boolclasstag =   2 /* Change to your Bool class tag here */;
 
-   enterscope();
-   if (cgen_debug) cout << "Building CgenClassTable" << endl;
-   install_basic_classes();
-   install_classes(classes);
-   build_inheritance_tree();
-init_class_tag();
+  enterscope();
+  if (cgen_debug) cout << "Building CgenClassTable" << endl;
+  install_basic_classes();
+  install_classes(classes);
+  build_inheritance_tree();
+  init_class_tag();
   traverse(root());
 
-     //at index 0, 1, 2, 3 etc 
-   
-   code();
-   exitscope();
+  //at index 0, 1, 2, 3 etc 
+
+  code();
+  exitscope();
 }
 
 void CgenClassTable::install_basic_classes()
@@ -958,48 +967,57 @@ void CgenNode::set_parentnd(CgenNodeP p)
 }
 
 
+/*
+  We are fishing out things like stringconst0 etc which exist in the stringtable, 
+  and which stand for "Object" etc.
+
+  We use the code reference to look it up in the string table.
+*/
 void CgenClassTable::print_class_name_tab(){
-str<<CLASSNAMETAB<<endl;
-std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
-    while(it != class_tags.end())
-    {
+  str<<CLASSNAMETAB<<endl;
+  std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
+  while(it != class_tags.end())
+  {
     str << WORD; (stringtable.lookup_string(it->first->get_name()->get_string()))->code_ref(str); str<<endl;
     it++;
   }
 }
 
+/*
+  Print out _protObj, and _init for every class, in order of classtags.
+*/
 void CgenClassTable::print_class_obj_tab(){
-str<<CLASSOBJTAB<<endl;
-std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
-    while(it != class_tags.end())
-    {
+  str<<CLASSOBJTAB<<endl;
+  std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
+  while(it != class_tags.end())
+  {
     str << WORD << it->first->get_name()->get_string() << PROTOBJ_SUFFIX <<endl;
     str << WORD << it->first->get_name()->get_string() << CLASSINIT_SUFFIX <<endl;
     it++;
   }
 }
 
+
+/*
+  Iterate through the features map, which has a list of all the CGenNodes
+  Get a node, and the node's name. For that node's method map, we print
+  out every single method. This is the dispatch table.
+*/
 void CgenClassTable::print_dispatch_tables(){
-std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
-    while(it != get_features_map().end())
-    {
-  CgenNodeP curr_node = it->first;
+  std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
+  while(it != get_features_map().end())
+  {
+    CgenNodeP curr_node = it->first;
 
-  str<<curr_node->get_name()<<DISPTAB_SUFFIX<<endl;
-  std::map< std::string, CgenNodeP>::iterator iter = (curr_node->method_map.begin());
- 
-  while (iter!= curr_node->method_map.end()){
+    str<<curr_node->get_name()<<DISPTAB_SUFFIX<<endl;
+    std::map< std::string, CgenNodeP>::iterator iter = (curr_node->method_map.begin());
 
-  str<< WORD << iter->second->get_name() << METHOD_SEP << iter->first <<endl;
-
-   iter++;
-  }
-it++;
-    
+    while (iter!= curr_node->method_map.end()){
+      str<< WORD << iter->second->get_name() << METHOD_SEP << iter->first <<endl;
+      iter++;
     }
-
-
-
+    it++;
+  }
 }
 
 
@@ -1007,57 +1025,39 @@ it++;
 */
 void CgenClassTable::print_node_attrs()
 {
-
-
-
-   std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
-    while(it != get_features_map().end())
-    {
-      if( it->first->basic() ){
-    str<< it->first->get_name() << PROTOBJ_SUFFIX << endl;
+  std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
+  while(it != get_features_map().end())
+  {
+    if( it->first->basic() ){
+      str<< it->first->get_name() << PROTOBJ_SUFFIX << endl;
       Features curr_attributes = it->second;
+      int count = 0;
+      for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
+        Feature count_at = curr_attributes->nth(j);
 
-  int count = 0;
-  for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
-  Feature count_at = curr_attributes->nth(j);
-  
-    if(!count_at->feat_is_method()){
-    count++;
+        if(!count_at->feat_is_method()){
+          count++;
+        }
+      }
+      str << WORD << class_tags[it->first] << endl;
+      str << WORD << count+3 << endl; //size
+      str << WORD << it->first->get_name() << DISPTAB_SUFFIX << endl;
+      for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
+        Feature curr_attr = curr_attributes->nth(i);
+        Symbol attr_type = curr_attr->get_type_decl();
+        if(attr_type == Bool) {
+          str << WORD; falsebool.code_ref(str); str<<endl;
+        }else if(attr_type == Str){
+          str << WORD; (stringtable.lookup_string(""))->code_ref(str); str<<endl;
+        } else if (attr_type == Int){
+          str << WORD; (inttable.lookup_string("0"))->code_ref(str); str<<endl;
+        } else if ( !curr_attr->feat_is_method()){
+          str << WORD << EMPTYSLOT <<endl;
+        }   
+      }
+      str << WORD << -1 <<endl;
     }
-  }
-  str << WORD << class_tags[it->first] << endl;
-  str << WORD << count+3 << endl; //size
-  
-  str << WORD << it->first->get_name() << DISPTAB_SUFFIX << endl;
-  for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
-
-
-    Feature curr_attr = curr_attributes->nth(i);
-    Symbol attr_type = curr_attr->get_type_decl();
-  
-    
-    
-    if(attr_type == Bool) {
-
-      str << WORD; falsebool.code_ref(str); str<<endl;
-      
-    }else if(attr_type == Str){
-      
-      str << WORD; (stringtable.lookup_string(""))->code_ref(str); str<<endl;
-
-    } else if (attr_type == Int){
-      str << WORD; (inttable.lookup_string("0"))->code_ref(str); str<<endl;
-    } else if ( !curr_attr->feat_is_method()){
-
-      str << WORD << EMPTYSLOT <<endl;
-
-    }   
-
-  }
-  str << WORD << -1 <<endl;
-}
-  it++;
-
+    it++;
   }
 }
 
@@ -1539,7 +1539,7 @@ void divide_class::code(ostream &s) {
   e2->code(s);
   // result now stored in acculumator
   emit_load( T1 /* char *dest_reg */, 4 /* offset */, SP /* char *source_reg */, s);
-  emit_mul( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
+  emit_div( ACC /*char *dest $a0 */, T1 /* $t1 */, ACC /* char *src2 $a0 */, s);
   emit_addiu ( SP, SP, 4, s );
 }
 
@@ -1552,9 +1552,15 @@ void neg_class::code(ostream &s) {
   emit_mul(ACC, T1, ACC, s);
 }
 
+/*
+blt
+*/
 void lt_class::code(ostream &s) {
 }
 
+/*
+b if equal
+*/
 void eq_class::code(ostream &s) {
 }
 
