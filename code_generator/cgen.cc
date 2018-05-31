@@ -1181,6 +1181,7 @@ void CgenClassTable::print_class_init_code(bool is_object_init)
 	// // save the address of the next instruction (save where you will jump back to)
 	if (!is_object_init)
 	{
+    // jal to the parent!
 		emit_jal("Object_init",str);
 	}
 	// move SELF register contents into the accumulator
@@ -1302,30 +1303,30 @@ void static_dispatch_class::code(ostream &s) {
 //   - 4*n + 4 arguments in the activation record
 //   - 4 bytes per argument, and also the frame pointer
 // */
-// void method_class::code(ostream &s)
-// {
-//   //Save the frame pointer
-//   emit_store( FP, 0, SP, s);
-//   // Adjust the stack
-//   emit_addiu(SP, SP, -4, s);
+void method_class::code(ostream &s)
+{
+  //Save the frame pointer
+  emit_store( FP, 0, SP, s);
+  // Adjust the stack
+  emit_addiu(SP, SP, -4, s);
 
-//   // Generate code for all of the arguemnts
-//   // save the actual parameters in reverse order
-//   for(int i = actuals->first(); actuals->more(i); i = actuals->next(i))
-//   {
-//    actuals->nth(i)->code(s);
-//     // for each of the arguments
-//     // generate code for them
-//     // store accumulator onto the stack
-//     // add -4 to the stack
-//       // save the frame pointer onto the stack
-//     emit_store( ACC /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
-//     emit_addiu( SP, SP, -4, s);
-//   }
-//   // pass in the label of the beginning of the function f
-//   // jump and link
-//   emit_jal(f_entry, s);
-// }
+  // Generate code for all of the arguemnts
+  // save the actual parameters in reverse order
+  for(int i = actuals->first(); actuals->more(i); i = actuals->next(i))
+  {
+   actuals->nth(i)->code(s);
+    // for each of the arguments
+    // generate code for them
+    // store accumulator onto the stack
+    // add -4 to the stack
+      // save the frame pointer onto the stack
+    emit_store( ACC /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
+    emit_addiu( SP, SP, -4, s);
+  }
+  // pass in the label of the beginning of the function f
+  // jump and link
+  emit_jal(f_entry, s);
+}
 
 
 
@@ -1355,6 +1356,8 @@ void dispatch_class::code(ostream &s) {
   // save the return address onto the stack
   emit_store( RA /* char *source_reg */ , 0 /* offset */, SP /* char *dest_reg */,  s);
   emit_addiu( SP, SP, -4, s);
+
+  // make sure a0 points to self
 
   expr->code(s);
   // now, after the body has been executed, we restore the environment
@@ -1506,9 +1509,17 @@ void sub_class::code(ostream &s) {
 }
 
 void mul_class::code(ostream &s) {
+
+
 }
 
 void divide_class::code(ostream &s) {
+
+
+emit_div(char *dest, char *src1, char *src2, ostream& s)
+emit_mul(char *dest, char *src1, char *src2, ostream& s)
+
+
 }
 
 void neg_class::code(ostream &s) {
@@ -1555,6 +1566,8 @@ void new__class::code(ostream &s) {
   // new SELF_TYPE will allocate an object with the same dynamic type as self
   // look at current self object, allocate of that type (find out concrete class we are allocating)
 
+  emit_load( ACC, prototype_object_addr );
+
   emit_jal( "Object.copy", s);
 
   // allocate n new locations to hold all n attribtues of an object (enough space for every attribute)
@@ -1570,7 +1583,8 @@ void new__class::code(ostream &s) {
   // we build a new environment (nothing to do with envirinment in which we called new)
   // only field names of the class are in scope
 
-  // evaluate a block
+  emit_jal( CLASSNAME "_init" );
+  // evaluate a block -- list of init expressions
   // Build the AST for this block, call block.code()
   // this is before we even run the initializers for the attributes
   // we order the attributes as greatest ancestor first, so attribbutes you inherited from ancestor go first
