@@ -994,7 +994,7 @@ std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
 
    iter++;
   }
-it++;
+  it++;
     
     }
 
@@ -1002,9 +1002,57 @@ it++;
 
 }
 
+int CgenClassTable::get_method_offset (std::string method_name, CgenNodeP nd){
+
+int offset = 0; 
+std::map< std::string, CgenNodeP>::iterator iter = (nd->method_map.begin());
+ 
+  while (iter!= nd->method_map.end()){
+    if(iter->first == method_name) return offset;
+    offset+=4;
+    iter++; 
+  }
+
+  return 0;
+}
 
 /*
 */
+
+
+int CgenClassTable::get_attribute_offset (std::string attribute, CgenNodeP nd){
+
+int offset = 12; 
+
+
+std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
+    
+    while(it != get_features_map().end())
+    {
+      if (it ->first->get_name()->get_string() == nd->get_name()->get_string()){
+        Features curr_attributes = it->second;
+
+          for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
+
+             Feature attr = curr_attributes->nth(j);
+
+            if(attr->get_feature_name()->get_string() == attribute){
+
+              return offset;
+            }
+             if(!attr->feat_is_method()){
+                offset +=4; 
+             }
+
+      }
+}
+it++;
+
+}
+return 0;
+}
+
+
 void CgenClassTable::print_node_attrs()
 {
 
