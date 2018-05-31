@@ -489,12 +489,13 @@ void StringEntry::code_def(ostream& s, int stringclasstag)
   code_ref(s);  s  << LABEL                                             // label
       << WORD << stringclasstag << endl                                 // tag
       << WORD << (DEFAULT_OBJFIELDS + STRING_SLOTS + (len+4)/4) << endl // size
-      << WORD;
+      << WORD <<  STRINGNAME <<DISPTAB_SUFFIX<<endl;
+
 
 
  /***** Add dispatch information for class String ******/
 
-      s << endl;                                              // dispatch table
+                                                 // dispatch table
       s << WORD;  lensym->code_ref(s);  s << endl;            // string length
   emit_string_constant(s,str);                                // ascii string
   s << ALIGN;                                                 // align to word
@@ -532,11 +533,11 @@ void IntEntry::code_def(ostream &s, int intclasstag)
   code_ref(s);  s << LABEL                                // label
       << WORD << intclasstag << endl                      // class tag
       << WORD << (DEFAULT_OBJFIELDS + INT_SLOTS) << endl  // object size
-      << WORD; 
+      <<WORD <<  INTNAME <<DISPTAB_SUFFIX<<endl;
 
  /***** Add dispatch information for class Int ******/
 
-      s << endl;                                          // dispatch table
+                                             // dispatch table
       s << WORD << str << endl;                           // integer value
 }
 
@@ -576,11 +577,11 @@ void BoolConst::code_def(ostream& s, int boolclasstag)
   code_ref(s);  s << LABEL                                  // label
       << WORD << boolclasstag << endl                       // class tag
       << WORD << (DEFAULT_OBJFIELDS + BOOL_SLOTS) << endl   // object size
-      << WORD;
+      << WORD <<  BOOLNAME <<DISPTAB_SUFFIX<<endl;
 
  /***** Add dispatch information for class Bool ******/
 
-      s << endl;                                            // dispatch table
+                                                // dispatch table
       s << WORD << val << endl;                             // value (0 or 1)
 }
 
@@ -967,6 +968,17 @@ std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
   }
 }
 
+void CgenClassTable::print_class_obj_tab(){
+str<<CLASSOBJTAB<<endl;
+std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
+    while(it != class_tags.end())
+    {
+    str << WORD << it->first->get_name()->get_string() << PROTOBJ_SUFFIX <<endl;
+    str << WORD << it->first->get_name()->get_string() << CLASSINIT_SUFFIX <<endl;
+    it++;
+  }
+}
+
 void CgenClassTable::print_dispatch_tables(){
 std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
     while(it != get_features_map().end())
@@ -1064,6 +1076,7 @@ void CgenClassTable::code()
   code_constants();
 
   print_class_name_tab();
+  print_class_obj_tab();
   print_node_attrs();
   print_dispatch_tables(); 
 
