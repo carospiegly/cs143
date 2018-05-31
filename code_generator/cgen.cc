@@ -1397,7 +1397,11 @@ void dispatch_class::code(ostream &s)
   }
   // pass in the label of the beginning of the function f
   // jump and link
-  // REPLACE THIS WITH THE NAME OF THE LABEL IN THE DISPATCH TABLE
+  
+
+  //int offs = cgen_state.classtableptr->get_method_offset ( name->get_string() /*method name*/, CgenNodeP nd);
+
+// REPLACE THIS WITH THE NAME OF THE LABEL IN THE DISPATCH TABLE
   emit_jal( name->get_string(), s);
 }
 
