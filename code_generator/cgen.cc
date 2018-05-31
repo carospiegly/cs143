@@ -717,7 +717,7 @@ void CgenClassTable::traverse(CgenNodeP nd) {
  for(int i = feats->first(); feats->more(i); i = feats->next(i)){
       Feature feat = feats->nth(i);
     if(feat->feat_is_method()){
-     nd->method_map.insert(std::make_pair( feat , nd));
+     nd->method_map.insert(std::make_pair( feat->get_feature_name()->get_string() , nd));
    }
 
   }
@@ -728,19 +728,17 @@ void CgenClassTable::traverse(CgenNodeP nd) {
 
 if(nd!=root()){
     
-    
-
 
 Features feats = nd->get_features();
  for(int i = feats->first(); feats->more(i); i = feats->next(i)){
       Feature feat = feats->nth(i);
     if(feat->feat_is_method()){
-     nd->method_map.insert(std::make_pair( feat, nd));
+     nd->method_map.insert(std::make_pair( feat->get_feature_name()->get_string() , nd));
    }
 
   }
 
-std::map< Feature, CgenNodeP>::iterator it = (parent->method_map.begin());
+std::map< std::string, CgenNodeP>::iterator it = (parent->method_map.begin());
  while(it != parent->method_map.end())
     {
       nd->method_map.insert(std::make_pair(it->first, it->second)); 
@@ -976,11 +974,11 @@ std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
   CgenNodeP curr_node = it->first;
 
   str<<curr_node->get_name()<<DISPTAB_SUFFIX<<endl;
-  std::map< Feature, CgenNodeP>::iterator iter = (curr_node->method_map.begin());
+  std::map< std::string, CgenNodeP>::iterator iter = (curr_node->method_map.begin());
  
   while (iter!= curr_node->method_map.end()){
 
-  str<< WORD << iter->second->get_name() << METHOD_SEP << iter->first->get_feature_name() <<endl;
+  str<< WORD << iter->second->get_name() << METHOD_SEP << iter->first <<endl;
 
    iter++;
   }
