@@ -169,7 +169,7 @@ void program_class::cgen(ostream &os)
 
   cgen_state.init_label_cntr();
   // Set up the symbol table, must have an initial scope to add things to
-  cgen_state.symtab = new SymbolTable<Symbol,Symbol>();
+  //cgen_state.symtab = new SymbolTable<Symbol,Symbol>();
   //cgen_state.symtab->enterscope();
   
   initialize_constants();
@@ -807,7 +807,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
   intclasstag =    1 /* Change to your Int class tag here */;
   boolclasstag =   2 /* Change to your Bool class tag here */;
 
-  
+  enterscope();  
   if (cgen_debug) cout << "Building CgenClassTable" << endl;
   install_basic_classes();
   install_classes(classes);
@@ -818,7 +818,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
   //at index 0, 1, 2, 3 etc 
 
   code();
-  //cgen_state.symtab->exitscope();
+  exitscope();
 }
 
 void CgenClassTable::install_basic_classes()
