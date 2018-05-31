@@ -1,6 +1,6 @@
 
 //**************************************************************
-//
+///
 // Code generator SKELETON
 //
 // Read the comments carefully. Make sure to
@@ -29,6 +29,16 @@
 #include <queue>
 extern void emit_string_constant(ostream& str, char *s);
 extern int cgen_debug;
+
+class GlobalCGenState;
+
+class GlobalCGenState
+{
+  public:
+	CgenClassTable *classtableptr;	
+};
+
+GlobalCGenState cgen_state;
 
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
@@ -619,6 +629,13 @@ void CgenClassTable::code_global_data()
   str << GLOBAL << BOOLTAG << endl;
   str << GLOBAL << STRINGTAG << endl;
 
+
+	// loop through each of the classes
+	// and print out their values
+
+
+
+
   //
   // We also need to know the tag of the Int, String, and Bool classes
   // during code generation.
@@ -766,6 +783,9 @@ void CgenClassTable::traverse(CgenNodeP nd) {
 
 CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
 {
+
+  cgen_state.classtableptr = this;
+
   stringclasstag = 0 /* Change to your String class tag here */;
   intclasstag =    1 /* Change to your Int class tag here */;
   boolclasstag =   2 /* Change to your Bool class tag here */;
@@ -1305,6 +1325,10 @@ void static_dispatch_class::code(ostream &s) {
 // */
 void dispatch_class::code(ostream &s)
 {
+
+ s << "WE ARE IN THE dispatch CLASS!!" << endl;
+ s << cgen_state.classtableptr->features_map.size() << endl;
+
   //Save the frame pointer
   emit_store( FP, 0, SP, s);
   // Adjust the stack
@@ -1349,6 +1373,7 @@ void dispatch_class::code(ostream &s)
   TODO: CATCH ERROR -- dispatch on void
 */
 void method_class::code(ostream &s) {
+
   // copy the stack pointer to the frame pointer
   // we are setting up the frame pointer for THIS function activation
   emit_move( FP /* char *dest_reg */, SP /* char *source_reg */, s);
