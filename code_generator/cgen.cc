@@ -1820,7 +1820,6 @@ void no_expr_class::code(ostream &s) {
 */
 void object_class::code(ostream &s) {
   int offs = cgen_state.classtableptr->get_attribute_offset ( name->get_string() , cgen_state.curr_cgen_node );
-
   emit_load(ACC, offs, SELF, s);
 }
 
