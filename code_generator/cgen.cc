@@ -1095,8 +1095,6 @@ std::map< std::string, CgenNodeP>::iterator iter = (nd->method_map.begin());
 int CgenClassTable::get_attribute_offset (std::string attribute, CgenNodeP nd){
 
 int offset = 3; 
-
-
 std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
     
     while(it != get_features_map().end())
@@ -1113,7 +1111,7 @@ std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
               return offset;
             }
              if(!attr->feat_is_method()){
-                offset +=4; 
+                offset +=1; 
              }
 
       }
@@ -1810,15 +1808,19 @@ void no_expr_class::code(ostream &s) {
 
 }
 
+/*
+  if it is the self identifier, it just evaluates to so (self object)
+  store unchanged
+
+  If a variable evaluates to an object, we find where is it located.
+  We load it into the accumulator.
+  what object happens to be located there right now
+  looking up a variable does not affect the store
+*/
 void object_class::code(ostream &s) {
+  int offs = cgen_state.classtableptr->get_attribute_offset ( name->get_string() , cgen_state.curr_cgen_node );
 
-  // if it is the self identifier, it just evaluates to so (self object)
-  // store unchanged
-
-  // variable evaluates to an object
-  // where is it located
-  // what object happens to be located there right now
-  // looking up a variable does not affect the store
+  emit_load(ACC, offs, SELF, s);
 }
 
 
