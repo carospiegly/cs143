@@ -1123,11 +1123,12 @@ void CgenClassTable::print_node_attrs()
   std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
   while(it != get_features_map().end())
   {
-    if( it->first->basic() ){
+  
       str<< it->first->get_name() << PROTOBJ_SUFFIX << ":" << endl;
       Features curr_attributes = it->second;
       int count = 0;
-      for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
+      for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j))
+      {
         Feature count_at = curr_attributes->nth(j);
 
         if(!count_at->feat_is_method()){
@@ -1137,25 +1138,24 @@ void CgenClassTable::print_node_attrs()
       str << WORD << class_tags[it->first] << endl;
       str << WORD << count+3 << endl; //size
       str << WORD << it->first->get_name() << DISPTAB_SUFFIX << endl;
-      for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
+      for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i))
+      {
         Feature curr_attr = curr_attributes->nth(i);
         Symbol attr_type = curr_attr->get_type_decl();
-        if(!curr_attr->feat_is_method()){
-        if(attr_type == Bool) {
-          str << WORD; falsebool.code_ref(str); str<<endl;
-        }else if(attr_type == Str){
-          str << WORD; (stringtable.lookup_string(""))->code_ref(str); str<<endl;
-        } else if (attr_type == Int){
-          str << WORD; (inttable.lookup_string("0"))->code_ref(str); str<<endl;
-        } else {
-          str << WORD << EMPTYSLOT <<endl;
-          
-            }
-      }
-
+        if(!curr_attr->feat_is_method())
+        {
+          if(attr_type == Bool) {
+            str << WORD; falsebool.code_ref(str); str<<endl;
+          }else if(attr_type == Str){
+            str << WORD; (stringtable.lookup_string(""))->code_ref(str); str<<endl;
+          } else if (attr_type == Int){
+            str << WORD; (inttable.lookup_string("0"))->code_ref(str); str<<endl;
+          } else {
+            str << WORD << EMPTYSLOT <<endl;
+          }
+        }
     }
-      str << WORD << -1 <<endl;
-    
+    str << WORD << -1 <<endl;
     it++;
   }
 }
@@ -1243,42 +1243,35 @@ void CgenClassTable::code()
 
 void CgenClassTable::print_methods()
 {
-	std::map<CgenNodeP, int>::iterator it = class_tags.begin();
+  std::map<CgenNodeP, int>::iterator it = class_tags.begin();
 
-
-	while(it != class_tags.end())
-	{
-		cgen_state.curr_cgen_node = it->first;
-		str<< it->first->get_name() << CLASSINIT_SUFFIX << ":" << endl;
-		bool is_object_init = ( strcmp(it->first->get_name()->get_string(), "Object")==0 );
-		print_class_init_code( is_object_init);
-  
+  while(it != class_tags.end())
+  {
+    cgen_state.curr_cgen_node = it->first;
+    str<< it->first->get_name() << CLASSINIT_SUFFIX << ":" << endl;
+    bool is_object_init = ( strcmp(it->first->get_name()->get_string(), "Object")==0 );
+    print_class_init_code( is_object_init);
     it++;
-
-}
-
-
-std::map<CgenNodeP, int>::iterator iter = class_tags.begin();
+  }
 
 
+  std::map<CgenNodeP, int>::iterator iter = class_tags.begin();
   while(iter != class_tags.end())
   {
-    if(!iter->first->basic()){
-    Features curr_attributes = iter->first->get_features();
-
-
-		for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
-			Feature curr_feat = curr_attributes->nth(j);
-			if(curr_feat->feat_is_method()){
-				str << iter->first->get_name() << "." << curr_feat->get_feature_name()->get_string() << ":" << endl;
-				curr_feat->code(str);
-			}
-		}
+    if(!iter->first->basic())
+    {
+      Features curr_attributes = iter->first->get_features();
+      for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j))
+      {
+        Feature curr_feat = curr_attributes->nth(j);
+        if(curr_feat->feat_is_method()){
+          str << iter->first->get_name() << "." << curr_feat->get_feature_name()->get_string() << ":" << endl;
+          curr_feat->code(str);
+        }
+      }
+    }
+    iter++;
   }
-		iter++;
-	}
-
-
 }
 
 void CgenClassTable::print_class_init_code(bool is_object_init)
