@@ -58,7 +58,22 @@ Class F {
         main6():Object {
 		(new IO).out_int(5)  
         };
+
+Class Y inherits A{
+        a : Int;
+        foo(x : Int) : Int {
+           {
+                a <- x;
+           }
+        };
 };
+
+Class W {
+
+b : Int; 
+
+};
+
 
 Class Main {
         main():Int {
