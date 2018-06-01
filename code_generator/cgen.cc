@@ -1280,17 +1280,17 @@ std::map<CgenNodeP, int>::iterator iter = class_tags.begin();
 void CgenClassTable::print_class_init_code(bool is_object_init)
 {
 	setup_stack_for_call(str);
-	// move what was in accumulator into the SELF register
-	//emit_move(SELF,ACC,str);
 	// procedure call
-	// // save the address of the next instruction (save where you will jump back to)
+	// save the address of the next instruction (save where you will jump back to)
+        // move what was in accumulator into the SELF register
+        emit_move(SELF,ACC,str);
 	if (!is_object_init)
 	{
     // jal to the parent!
 		emit_jal("Object_init",str);
 	}
 	// move SELF register contents into the accumulator
-	//emit_move(ACC,SELF,str);
+	emit_move(ACC,SELF,str);
 	restore_stack_after_call(str);
 }
 
@@ -1480,8 +1480,6 @@ void setup_stack_for_call(ostream &s)
 	emit_store(RA,1,SP,s);
 	// make the frame ptr now stack_ptr + 16
 	emit_addiu(FP,SP,16,s);
-	// move what was in accumulator into the SELF register
-	emit_move(SELF,ACC,s);
 }
 
 /*
@@ -1495,8 +1493,6 @@ void setup_stack_for_call(ostream &s)
 */
 void restore_stack_after_call(ostream &s)
 {
-  // move SELF register contents into the accumulator
-  emit_move(ACC,SELF,s);
   // load what was 12 above stack_ptr into the frame_ptr
   emit_load(FP,3,SP,s);
   // load 12 above stack_ptr into the frame pointer
