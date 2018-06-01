@@ -1271,6 +1271,7 @@ void CgenClassTable::print_methods()
   std::map<CgenNodeP, int>::iterator iter = class_tags.begin();
   while(iter != class_tags.end())
   {
+    cgen_state.curr_cgen_node = iter->first;
     if(!iter->first->basic())
     {
       Features curr_attributes = iter->first->get_features();
