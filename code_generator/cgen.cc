@@ -1123,7 +1123,7 @@ void CgenClassTable::print_node_attrs()
   std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
   while(it != get_features_map().end())
   {
-    if( it->first->basic() ){
+ 
       str<< it->first->get_name() << PROTOBJ_SUFFIX << endl;
       Features curr_attributes = it->second;
       int count = 0;
@@ -1140,18 +1140,22 @@ void CgenClassTable::print_node_attrs()
       for(int i = curr_attributes->first(); curr_attributes->more(i); i = curr_attributes->next(i)){
         Feature curr_attr = curr_attributes->nth(i);
         Symbol attr_type = curr_attr->get_type_decl();
+        if(!curr_attr->feat_is_method()){
         if(attr_type == Bool) {
           str << WORD; falsebool.code_ref(str); str<<endl;
         }else if(attr_type == Str){
           str << WORD; (stringtable.lookup_string(""))->code_ref(str); str<<endl;
         } else if (attr_type == Int){
           str << WORD; (inttable.lookup_string("0"))->code_ref(str); str<<endl;
-        } else if ( !curr_attr->feat_is_method()){
+        } else {
           str << WORD << EMPTYSLOT <<endl;
-        }   
+          
+            }
       }
-      str << WORD << -1 <<endl;
+
     }
+      str << WORD << -1 <<endl;
+    
     it++;
   }
 }
@@ -1419,7 +1423,9 @@ void dispatch_class::code(ostream &s)
   
   int label_id = cgen_state.increment_label_cntr();
   
-  emit_label_ref( label_id, s);
+  emit_bne( ACC, ZERO,label_id, s);
+  emit_load_address(ACC, stringtable.lookup_string("")->get_string(), s);
+  
 
   emit_label_def( label_id, s);
   // SELF/OBJECT will already be in the accumulator
@@ -1689,6 +1695,8 @@ void neg_class::code(ostream &s) {
 blt
 */
 void lt_class::code(ostream &s) {
+
+
 }
 
 /*
@@ -1707,11 +1715,15 @@ void eq_class::code(ostream &s) {
 
 
 void leq_class::code(ostream &s) {
+
+
 }
 
 
 
 void comp_class::code(ostream &s) {
+
+
 }
 
 void int_const_class::code(ostream& s)  
@@ -1781,9 +1793,15 @@ void new__class::code(ostream &s) {
 void isvoid_class::code(ostream &s) {
 
 
+
+
 }
 
 void no_expr_class::code(ostream &s) {
+
+
+
+
 }
 
 void object_class::code(ostream &s) {
