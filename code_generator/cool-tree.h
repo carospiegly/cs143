@@ -53,6 +53,7 @@ public:
     virtual Symbol get_feature_name() = 0;
     virtual Symbol get_type_decl() = 0;
     virtual Expression get_feat_expr() = 0;
+    virtual void code(ostream&) = 0;
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -255,6 +256,10 @@ public:
    {
      return init;
    }
+  void code(ostream&){
+
+   
+  }
 
 
 #ifdef Feature_SHARED_EXTRAS

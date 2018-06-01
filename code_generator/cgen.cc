@@ -42,7 +42,7 @@ class GlobalCGenState
 	CgenNodeP curr_cgen_node;
 	SymbolTable<Symbol,Symbol> *symtab;
         void init_label_cntr() { label_cntr = -1; } 
-	int increment_label_cntr() { return label_cntr++; }
+	int increment_label_cntr() { return label_cntr = label_cntr + 1; }
 };
 
 GlobalCGenState cgen_state;
@@ -1239,23 +1239,42 @@ void CgenClassTable::code()
 
 void CgenClassTable::print_methods()
 {
-	std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
-	while(it != get_features_map().end())
+	std::map<CgenNodeP, int>::iterator it = class_tags.begin();
+
+
+	while(it != class_tags.end())
 	{
 		cgen_state.curr_cgen_node = it->first;
 		str<< it->first->get_name() << CLASSINIT_SUFFIX << ":" << endl;
 		bool is_object_init = ( strcmp(it->first->get_name()->get_string(), "Object")==0 );
 		print_class_init_code( is_object_init);
-		Features curr_attributes = it->second;
+  
+    it++;
+
+}
+
+
+std::map<CgenNodeP, int>::iterator iter = class_tags.begin();
+
+
+  while(iter != class_tags.end())
+  {
+    if(!iter->first->basic()){
+    Features curr_attributes = iter->first->get_features();
+
+
 		for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
 			Feature curr_feat = curr_attributes->nth(j);
-			if( curr_feat->feat_is_method()){
-				str << it->first->get_name() << "." << curr_feat->get_feature_name()->get_string() << endl;
-				curr_feat->get_feat_expr()->code(str);
+			if(curr_feat->feat_is_method()){
+				str << iter->first->get_name() << "." << curr_feat->get_feature_name()->get_string() << endl;
+				curr_feat->code(str);
 			}
 		}
-		it++;
+  }
+		iter++;
 	}
+
+
 }
 
 void CgenClassTable::print_class_init_code(bool is_object_init)
@@ -1399,10 +1418,8 @@ void dispatch_class::code(ostream &s)
   int offs = cgen_state.classtableptr->get_method_offset ( name->get_string() /*method name*/, class_param );
   
   int label_id = cgen_state.increment_label_cntr();
+  
   emit_label_ref( label_id, s);
-
-  s << "THE LABEL ID WAS" << label_id << endl;
-
 
   emit_label_def( label_id, s);
   // SELF/OBJECT will already be in the accumulator
@@ -1410,7 +1427,8 @@ void dispatch_class::code(ostream &s)
   emit_load(T1 , offs, T1, s); // WALK ALONG THE DISPATCH TABLE UNTIL YOU FIND WHAT YOU WANT
   emit_jalr(T1, s);
 
-  // restore stack???
+
+  
 
 }
 
@@ -1435,7 +1453,6 @@ void dispatch_class::code(ostream &s)
 void method_class::code(ostream &s) {
 
   setup_stack_for_call(s);
-  s << "WE ENTERED THE SCOPE IN METHODCLASS!" << endl;
   // make sure a0 points to self
   //cgen_state.symtab->enterscope();
   // add all the formals to the symbol table
