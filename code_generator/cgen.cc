@@ -1728,9 +1728,13 @@ void new__class::code(ostream &s) {
 
  // GET THE NAME OF THE PROTOTYPE OBJECT
  // 
-
-  //emit_load( ACC, prototype_object_addr, s);
-
+  char *expr_classname = get_type()->get_string();
+  char classname_buf[1000];
+  char protobj_buf[1000];  
+  strcpy( classname_buf, expr_classname);
+  strcpy( protobj_buf, PROTOBJ_SUFFIX);
+  strcat( classname_buf, protobj_buf);
+  emit_load_address( ACC, classname_buf , s);
   emit_jal( "Object.copy", s);
 
   // allocate n new locations to hold all n attribtues of an object (enough space for every attribute)
@@ -1748,7 +1752,11 @@ void new__class::code(ostream &s) {
 
   // GET THE CLASSNAME
 
-  //emit_jal( CLASSNAME, "_init" );
+  char init_buf[1000];
+  strcpy( classname_buf, expr_classname);
+  strcpy( init_buf, CLASSINIT_SUFFIX);
+  strcat( classname_buf, init_buf);
+  emit_jal( classname_buf, s);
   // evaluate a block -- list of init expressions
   // Build the AST for this block, call block.code()
   // this is before we even run the initializers for the attributes
