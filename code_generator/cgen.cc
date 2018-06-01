@@ -156,7 +156,7 @@ BoolConst truebool(TRUE);
 
 
 /*
-  We perform code generation in two passes:
+ perform code generation in two passes:
   - The first pass decides the object layout for each class, 
   particularly the offset at which each attribute is stored in an object. 
   - Using this information, the second pass recursively walks each feature 
@@ -1057,14 +1057,24 @@ void CgenClassTable::print_dispatch_tables(){
   }
 }
 
-int CgenClassTable::get_method_offset (std::string method_name, CgenNodeP nd){
+int CgenClassTable::get_method_offset (std::string method_name, std::string node_name){
+CgenNodeP nd; 
+std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
+  while(it != class_tags.end())
+  {
+    if(it->first->get_name()->get_string() == node_name){
 
+      nd= it->first;
+    }
+    it++;
+
+  }
 int offset = 0; 
 std::map< std::string, CgenNodeP>::iterator iter = (nd->method_map.begin());
  
   while (iter!= nd->method_map.end()){
     if(iter->first == method_name) return offset;
-    offset+=4;
+    offset+=1;
     iter++; 
   }
 
@@ -1077,7 +1087,7 @@ std::map< std::string, CgenNodeP>::iterator iter = (nd->method_map.begin());
 
 int CgenClassTable::get_attribute_offset (std::string attribute, CgenNodeP nd){
 
-int offset = 12; 
+int offset = 3; 
 
 
 std::map<CgenNodeP, Features>::iterator it = (get_features_map()).begin();
@@ -1377,15 +1387,16 @@ void dispatch_class::code(ostream &s)
   // MAKE SURE THE XPRESSION DID NOT RETURN NUL
 
   // ALSO CHECK FOR ONE OF THE 3 RUNTIME ERRORS
+ 
 
-  int offs = cgen_state.classtableptr->get_method_offset ( name->get_string() /*method name*/, cgen_state.curr_cgen_node );
+  int offs = cgen_state.classtableptr->get_method_offset ( name->get_string() /*method name*/, expr->get_type()->get_string() );
+  
   int label_id = cgen_state.increment_label_cntr();
   emit_label_ref( label_id, s);
 
-
   emit_label_def( label_id, s);
   // SELF/OBJECT will already be in the accumulator
-  emit_load(T1 /*dst */, 8 /*offs*/, ACC /*src*/, s);
+  emit_load(T1 /*dst */, 2 /*offs*/, ACC /*src*/, s);
   emit_load(T1 , offs, T1, s); // WALK ALONG THE DISPATCH TABLE UNTIL YOU FIND WHAT YOU WANT
   emit_jalr(T1, s);
 
