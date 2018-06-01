@@ -1387,9 +1387,16 @@ void dispatch_class::code(ostream &s)
   // MAKE SURE THE XPRESSION DID NOT RETURN NUL
 
   // ALSO CHECK FOR ONE OF THE 3 RUNTIME ERRORS
- 
+  std::string class_param;
+  if(expr->get_type() == SELF_TYPE){
 
-  int offs = cgen_state.classtableptr->get_method_offset ( name->get_string() /*method name*/, expr->get_type()->get_string() );
+      class_param = cgen_state.curr_cgen_node->get_name()->get_string(); 
+
+  }else{
+
+    class_param = expr->get_type()->get_string();
+  }
+  int offs = cgen_state.classtableptr->get_method_offset ( name->get_string() /*method name*/, class_param );
   
   int label_id = cgen_state.increment_label_cntr();
   emit_label_ref( label_id, s);
@@ -1755,6 +1762,8 @@ void new__class::code(ostream &s) {
 }
 
 void isvoid_class::code(ostream &s) {
+
+
 }
 
 void no_expr_class::code(ostream &s) {
