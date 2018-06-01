@@ -827,7 +827,6 @@ void CgenClassTable::install_basic_classes()
 // The tree package uses these globals to annotate the classes built below.
   //curr_lineno  = 0;
   Symbol filename = stringtable.add_string("<basic class>");
-
 //
 // A few special class names are installed in the lookup table but not
 // the class list.  Thus, these classes exist, but are not part of the
@@ -1424,10 +1423,12 @@ void dispatch_class::code(ostream &s)
   int label_id = cgen_state.increment_label_cntr();
   
   emit_bne( ACC, ZERO,label_id, s);
-  emit_load_address(ACC, stringtable.lookup_string("")->get_string(), s);
-  
-
+  emit_load_string(ACC,stringtable.lookup(0),s);
+  emit_load_imm(T1, 1,  s);
+  emit_jal("_dispatch_abort", s);
   emit_label_def( label_id, s);
+
+
   // SELF/OBJECT will already be in the accumulator
   emit_load(T1 /*dst */, 2 /*offs*/, ACC /*src*/, s);
   emit_load(T1 , offs, T1, s); // WALK ALONG THE DISPATCH TABLE UNTIL YOU FIND WHAT YOU WANT
