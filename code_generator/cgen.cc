@@ -646,12 +646,7 @@ void CgenClassTable::code_global_data()
   str << GLOBAL << BOOLTAG << endl;
   str << GLOBAL << STRINGTAG << endl;
 
-  str << INTTAG << LABEL
-      << WORD << intclasstag << endl;
-  str << BOOLTAG << LABEL 
-      << WORD << boolclasstag << endl;
-  str << STRINGTAG << LABEL 
-      << WORD << stringclasstag << endl;
+
 
   str << GLOBAL << CLASSOBJTAB << endl;
 
@@ -663,6 +658,14 @@ void CgenClassTable::code_global_data()
     str << GLOBAL << it->first->get_name() << CLASSINIT_SUFFIX << endl;
   it++;
   }
+
+
+  str << INTTAG << LABEL
+      << WORD << intclasstag << endl;
+  str << BOOLTAG << LABEL 
+      << WORD << boolclasstag << endl;
+  str << STRINGTAG << LABEL 
+      << WORD << stringclasstag << endl;
 	// loop through each of the classes
 	// and print out their values
 
@@ -759,8 +762,13 @@ void CgenClassTable::code_constants()
 */
 void CgenClassTable::traverse(CgenNodeP nd) {
  
-  class_tags.insert(std::make_pair( nd, increase_class_tag()));
+ if (nd->get_name() == Int) { class_tags.insert(std::make_pair( nd, 1));
+ } else if (nd->get_name()== Str) { class_tags.insert(std::make_pair( nd, 0));
+} else if (nd->get_name() == Bool) { class_tags.insert(std::make_pair( nd, 2));
+}else{
 
+  class_tags.insert(std::make_pair( nd, increase_class_tag()));
+}
 
   // get all of the features for the current node we are at
   if(nd == root()){ features_map.insert(std::make_pair(nd, nd->get_features()));
