@@ -646,23 +646,31 @@ void CgenClassTable::code_global_data()
   str << GLOBAL << BOOLTAG << endl;
   str << GLOBAL << STRINGTAG << endl;
 
+  str << INTTAG << LABEL
+      << WORD << intclasstag << endl;
+  str << BOOLTAG << LABEL 
+      << WORD << boolclasstag << endl;
+  str << STRINGTAG << LABEL 
+      << WORD << stringclasstag << endl;
 
+  str << GLOBAL << CLASSOBJTAB << endl;
+
+
+  std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
+  while(it != class_tags.end())
+  {
+    str << GLOBAL << it->first->get_name() << PROTOBJ_SUFFIX << endl;
+    str << GLOBAL << it->first->get_name() << CLASSINIT_SUFFIX << endl;
+  it++;
+  }
 	// loop through each of the classes
 	// and print out their values
 
 
 
 
-  //
-  // We also need to know the tag of the Int, String, and Bool classes
-  // during code generation.
-  //
-  str << INTTAG << LABEL
-      << WORD << intclasstag << endl;
-  str << BOOLTAG << LABEL 
-      << WORD << boolclasstag << endl;
-  str << STRINGTAG << LABEL 
-      << WORD << stringclasstag << endl;    
+
+   
 }
 
 
