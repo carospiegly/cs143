@@ -1375,13 +1375,7 @@ void static_dispatch_class::code(ostream &s) {
 //   - 4 bytes per argument, and also the frame pointer
 // */
 void dispatch_class::code(ostream &s)
-{
-  //Save the frame pointer
-  emit_store( FP, 0, SP, s);
-  // Adjust the stack
-  emit_addiu(SP, SP, -4, s);
-
-  
+{ 
   // Generate code for all of the arguemnts
   // save the actual parameters in reverse order
   for(int i = actual->first(); actual->more(i); i = actual->next(i))
@@ -1481,6 +1475,8 @@ void setup_stack_for_call(ostream &s)
 	emit_store(RA,1,SP,s);
 	// make the frame ptr now stack_ptr + 16
 	emit_addiu(FP,SP,16,s);
+  // move what was in accumulator into the SELF register
+  emit_move(SELF,ACC,s);
 }
 
 /*
