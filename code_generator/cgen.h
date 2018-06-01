@@ -59,7 +59,7 @@ int get_attribute_offset (std::string attribute, CgenNodeP nd);
 int get_method_offset (std::string method_name, std::string node_name);
    void print_class_obj_tab();
 
-   void print_class_init_code(bool is_object_init);
+   void print_class_init_code(bool is_object_init, CgenNodeP nd);
    std::map<CgenNodeP, Features> get_features_map() {return features_map;}
    int class_tag;
    void init_class_tag(){ class_tag = 3; }

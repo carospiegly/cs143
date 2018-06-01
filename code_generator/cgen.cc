@@ -1263,7 +1263,7 @@ void CgenClassTable::print_methods()
     cgen_state.curr_cgen_node = it->first;
     str<< it->first->get_name() << CLASSINIT_SUFFIX << ":" << endl;
     bool is_object_init = ( strcmp(it->first->get_name()->get_string(), "Object")==0 );
-    print_class_init_code( is_object_init);
+    print_class_init_code( is_object_init, it->first);
     it++;
   }
 
@@ -1293,15 +1293,23 @@ void CgenClassTable::print_methods()
 	Setup stack also moves what was in the accumulator
 	into the self register
 */
-void CgenClassTable::print_class_init_code(bool is_object_init)
+void CgenClassTable::print_class_init_code(bool is_object_init, CgenNodeP nd)
 {
 	setup_stack_for_call(str);
 	// procedure call
 	// save the address of the next instruction (save where you will jump back to)
 	if (!is_object_init)
 	{
+
+  char *parent = (nd->get_parentnd())->get_name()->get_string();
+  char parent_buf[1000];
+  char init_buf[1000];  
+  strcpy( parent_buf, parent);
+  strcpy( init_buf, CLASSINIT_SUFFIX);
+  strcat( parent_buf, init_buf);
     // jal to the parent!
-		emit_jal("Object_init",str);
+
+		emit_jal(parent_buf, str);
 	}
 	// move SELF register contents into the accumulator
 	emit_move(ACC,SELF,str);
