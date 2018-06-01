@@ -1011,7 +1011,7 @@ void CgenNode::set_parentnd(CgenNodeP p)
   We use the code reference to look it up in the string table.
 */
 void CgenClassTable::print_class_name_tab(){
-  str<<CLASSNAMETAB<<endl;
+  str << CLASSNAMETAB << ":" << endl;
   std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
   while(it != class_tags.end())
   {
@@ -1024,7 +1024,7 @@ void CgenClassTable::print_class_name_tab(){
   Print out _protObj, and _init for every class, in order of classtags.
 */
 void CgenClassTable::print_class_obj_tab(){
-  str<<CLASSOBJTAB<<endl;
+  str << CLASSOBJTAB << ":" << endl;
   std::map<CgenNodeP, int>::iterator it = (class_tags.begin());
   while(it != class_tags.end())
   {
@@ -1046,7 +1046,7 @@ void CgenClassTable::print_dispatch_tables(){
   {
     CgenNodeP curr_node = it->first;
 
-    str<<curr_node->get_name()<<DISPTAB_SUFFIX<<endl;
+    str<<curr_node->get_name() << DISPTAB_SUFFIX << ":" << endl;
     std::map< std::string, CgenNodeP>::iterator iter = (curr_node->method_map.begin());
 
     while (iter!= curr_node->method_map.end()){
@@ -1124,7 +1124,7 @@ void CgenClassTable::print_node_attrs()
   while(it != get_features_map().end())
   {
     if( it->first->basic() ){
-      str<< it->first->get_name() << PROTOBJ_SUFFIX << endl;
+      str<< it->first->get_name() << PROTOBJ_SUFFIX << ":" << endl;
       Features curr_attributes = it->second;
       int count = 0;
       for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
@@ -1266,7 +1266,7 @@ std::map<CgenNodeP, int>::iterator iter = class_tags.begin();
 		for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j)){
 			Feature curr_feat = curr_attributes->nth(j);
 			if(curr_feat->feat_is_method()){
-				str << iter->first->get_name() << "." << curr_feat->get_feature_name()->get_string() << endl;
+				str << iter->first->get_name() << "." << curr_feat->get_feature_name()->get_string() << ":" << endl;
 				curr_feat->code(str);
 			}
 		}
@@ -1385,6 +1385,7 @@ void dispatch_class::code(ostream &s)
   // Adjust the stack
   emit_addiu(SP, SP, -4, s);
 
+  
   // Generate code for all of the arguemnts
   // save the actual parameters in reverse order
   for(int i = actual->first(); actual->more(i); i = actual->next(i))
