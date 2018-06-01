@@ -1273,13 +1273,16 @@ void CgenClassTable::print_methods()
   }
 }
 
+
+/*
+	Setup stack also moves what was in the accumulator
+	into the self register
+*/
 void CgenClassTable::print_class_init_code(bool is_object_init)
 {
 	setup_stack_for_call(str);
 	// procedure call
 	// save the address of the next instruction (save where you will jump back to)
-        // move what was in accumulator into the SELF register
-        emit_move(SELF,ACC,str);
 	if (!is_object_init)
 	{
     // jal to the parent!
