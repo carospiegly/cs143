@@ -34,8 +34,8 @@ private:
   std::map<Symbol,Symbol> _child_to_parent_classmap;
   std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > _method_map;
   std::map<Symbol, Class_> _declared_classes_map;
-
   int semant_errors;
+  
   void install_basic_classes();
   bool check_inheritance_graph_for_cycles();
   void gather_valid_classes();
@@ -45,6 +45,7 @@ private:
 
   ostream& error_stream;
 public:
+
   ClassTable(Classes);
   std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > get_method_map();
   std::map<Symbol,Symbol> get_child_map(){ return _child_to_parent_classmap; }
@@ -54,6 +55,10 @@ public:
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
+  ostream& get_error_stream(){ return error_stream;}
+  Classes get_class_list(){return _classes;}
+  bool is_subtypeof(  Symbol child, Symbol supposed_parent, 
+                                        std::map<Symbol,Symbol> _child_to_parent_classmap );
 };
 
 

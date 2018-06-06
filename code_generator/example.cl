@@ -1,22 +1,11 @@
 
-Class C inherits A{
-        a : Int;
+Class C {
+        
         foo(x : Int) : Int {
            {
-                a <- x;
+
+              Int a <- x;
            }
         };
 };
 
-Class A {
-
-b : Int; 
-
-};
-
-
-Class Main {
-        main():Int {
-          (new C).foo(1)
-        };
-};
