@@ -516,10 +516,6 @@ void program_class::semant()
     // Perform all type checking
     for(std::set<Symbol>::iterator it = valid_classes.begin(); it != valid_classes.end(); it++)
     {
-       
-        
-    
-
 
 
         Symbol curr_class_symbol = *it; 
@@ -617,21 +613,16 @@ Formals formals_list = curr_feat->get_formals();
                 symtab->addid(name, type_decl);
 
             }
-            cout<<curr_class_symbol<<endl;
-            cout<<curr_feat->get_name()<<endl;
             Symbol method_type = (curr_feat->get_expression_to_check())->type_check(symtab, method_map, classtable, curr_class_symbol, _child_to_parent_classmap);
-           cout<<"meth" << method_type<<endl;
 
             Symbol ret_type = curr_feat->get_return_type();
              
              if(ret_type == SELF_TYPE){
-                cout<<"return type was SELF_TYPE"<<endl;
                 ret_type = curr_class_symbol;
                 if(((ClassTableP)classtable)->is_subtypeof(ret_type, method_type, _child_to_parent_classmap)){
                     ret_type = method_type;
                 }
             }
-            cout<<"ret " <<ret_type <<endl;
         if ( !((ClassTableP)classtable)->is_subtypeof(method_type, ret_type, _child_to_parent_classmap) ){
         ((ClassTableP)classtable)->get_error_stream() << "Inferred return type of method does not conform to declared return type."<<endl;
         ((ClassTableP)classtable)->semant_error();
@@ -863,9 +854,9 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
 
     Symbol ret_type = method_formals[method_formals.size()-1];    // check if the return type is SELF_TYPE
     if ( ret_type == SELF_TYPE ){
-       
         return dispatch_class;
     }  
+       
     return ret_type;
 }
 
@@ -884,20 +875,29 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
    
     std::map<Symbol, Class_> declared_classes_map = ((ClassTableP)classtable)->get_class_map();
     std::vector<Symbol> method_formals;
+    Symbol disp_class = dispatch_class;
+
     if(method_map.find(std::make_pair(dispatch_class, name)) == method_map.end()){
 
     while(true){
-        Class__class *disp = declared_classes_map.find(dispatch_class)->second;
-        Symbol disp_parent = disp->get_parent();
-        if(disp->get_parent()==NULL){
-            break;
+
+        if(_child_to_parent_classmap.find(disp_class) == _child_to_parent_classmap.end()){
+            //no parents
+        ((ClassTableP)classtable)->get_error_stream() << "No matching method declaration."<<endl;
+        ((ClassTableP)classtable)->semant_error();
+        return Object;
+
         }
+        //get parent
+        Symbol disp_parent = (_child_to_parent_classmap).find(disp_class)->second; 
+
+
         if(method_map.find(std::make_pair(disp_parent, name)) != method_map.end()){
             method_formals = method_map.find(std::make_pair(disp_parent, name))->second;
-            dispatch_class = disp_parent;
             break;
         }
-        dispatch_class = disp_parent;
+
+        disp_class = disp_parent;
     }
 
 }else{
@@ -917,6 +917,7 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
     {
         ((ClassTableP)classtable)->get_error_stream() << "You tried to call a function, but didnt supply the right number of args."<<endl;
         ((ClassTableP)classtable)->semant_error();
+        return Object;
 
     }
     for( size_t j = 0; j < dispatch_formals.size(); j++ )
@@ -925,12 +926,14 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
         if ( !is_subtypeof(dispatch_formals[j], method_formals[j], _child_to_parent_classmap) ){
             ((ClassTableP)classtable)->get_error_stream() << "Dispatch formal did not conform."<<endl;
             ((ClassTableP)classtable)->semant_error();
+            return Object;
         }
     }
     Symbol ret_type = method_formals[method_formals.size()-1];
     // check if the return type is SELF_TYPE
 
     if ( ret_type == SELF_TYPE ){
+
        
         return dispatch_class; 
     } 
@@ -1006,7 +1009,7 @@ Symbol no_expr_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                     void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
   // can use "this" if needed
-  return Object; // ????
+  return No_class; 
 }
 
 
@@ -1224,7 +1227,10 @@ Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                             Symbol class_symbol, 
                             std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
+    
     Symbol initType = init->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
+    if(initType==No_class){ initType = type_decl;}
+    
     if( !is_subtypeof(initType, type_decl, _child_to_parent_classmap) )
     {
         ((ClassTableP)classtable)->get_error_stream() << "the let initialization was not a subtype of the declared type of the var"<<endl;
@@ -1239,7 +1245,6 @@ Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
     symtab->addid(identifier, address); // add x temporarily to the symbol table
     Symbol bodyType = body->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
     symtab->exitscope(); // x is removed from the symbol table
-
     type = bodyType; 
     return type;
 }
@@ -1271,10 +1276,34 @@ Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                                 void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-   // expr->type_check(symtab, method_map, error_stream);
-   // for(int i = cases->first(); cases->more(i); i = cases->next(i))
-   //   cases->nth(i)->type_check(symtab, method_map, error_stream);
-    return Object; // FIX THIS, THIS IS WRONG
+        expr->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
+        std::list<Symbol> types;
+        Symbol return_case; 
+     for(int i = cases->first(); cases->more(i); i = cases->next(i)){
+        //go through branches and add variables to scope
+        symtab->enterscope();
+
+    
+    Symbol* address = new Symbol();
+    Symbol curr_type = cases->nth(i)->get_type_decl();
+    *address = curr_type;
+    symtab->addid(cases->nth(i)->get_name(), address); // add x temporarily to the symbol table
+    Symbol case_type = cases->nth(i)->get_expr()->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
+    types.push_back(case_type);
+    symtab->exitscope(); // x is r
+       
+    }
+    if(types.size() == 1){
+        return types.front();
+    }else{
+      std::list<Symbol>::iterator it;
+      return_case = least_upper_bound(types.front(),types.front(), class_symbol,  _child_to_parent_classmap );
+    for (it = types.begin(); it != types.end(); ++it){
+        return_case = least_upper_bound(return_case, *it, class_symbol, _child_to_parent_classmap );
+    }
+}
+    
+    return return_case; // FIX THIS, THIS IS WRONG
 }
 
 
