@@ -568,9 +568,9 @@ for(std::set<Symbol>::iterator iter = vlid_set.begin(); iter != vlid_set.end(); 
             symtab->addid(curr_class, address);
     }
   
+    Symbol self_sym = SELF_TYPE;
     Symbol* addr = new Symbol();
-    Symbol curr_type = curr_class_symbol;
-    *addr  = curr_type;
+    *addr  = self_sym;
     symtab->addid(self, addr);
 
 add_own_attributes_to_scope(curr_class_symbol, declared_classes_map, symtab);
@@ -614,15 +614,23 @@ Formals formals_list = curr_feat->get_formals();
 
             }
             Symbol method_type = (curr_feat->get_expression_to_check())->type_check(symtab, method_map, classtable, curr_class_symbol, _child_to_parent_classmap);
+                //self type
+            
+            if(method_type == SELF_TYPE ){
 
+                method_type = curr_class_symbol;
+            }
             Symbol ret_type = curr_feat->get_return_type();
              
              if(ret_type == SELF_TYPE){
-                ret_type = curr_class_symbol;
-                if(((ClassTableP)classtable)->is_subtypeof(ret_type, method_type, _child_to_parent_classmap)){
-                    ret_type = method_type;
+            
+             ret_type = curr_class_symbol;
                 }
-            }
+            //     if(((ClassTableP)classtable)->is_subtypeof(ret_type, method_type, _child_to_parent_classmap)){
+            //         ret_type = method_type;
+
+            //     }
+            // }
         if ( !((ClassTableP)classtable)->is_subtypeof(method_type, ret_type, _child_to_parent_classmap) ){
         ((ClassTableP)classtable)->get_error_stream() << "Inferred return type of method does not conform to declared return type."<<endl;
         ((ClassTableP)classtable)->semant_error();
@@ -870,9 +878,12 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                     Symbol class_symbol, 
                                     std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
+
     //must conform to the type as type_name
     Symbol dispatch_class = expr->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap); 
-   
+   if(dispatch_class == SELF_TYPE){
+    dispatch_class = class_symbol;
+   }
     std::map<Symbol, Class_> declared_classes_map = ((ClassTableP)classtable)->get_class_map();
     std::vector<Symbol> method_formals;
     Symbol disp_class = dispatch_class;
@@ -934,10 +945,11 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 
     if ( ret_type == SELF_TYPE ){
 
-       
+      
         return dispatch_class; 
     } 
     return ret_type;
+
 } 
 
 
@@ -1008,8 +1020,9 @@ Symbol no_expr_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
                     void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
+
   // can use "this" if needed
-  return No_class; 
+  return SELF_TYPE; 
 }
 
 
@@ -1148,7 +1161,7 @@ Symbol string_const_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
                                         Symbol class_symbol, 
                                         std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-    type= Str;
+    type = Str;
     return Str; 
 }
 
@@ -1179,7 +1192,7 @@ Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
     
     
     Symbol *type_of_ID = symtab->lookup(name);
-   
+
     if( type_of_ID == NULL)
     {
         ((ClassTableP)classtable)->get_error_stream() << "This variable name was never defined"<<endl;
@@ -1188,6 +1201,8 @@ Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
     } else {
         type = *type_of_ID;
     }
+
+    
     return type;
 }
 

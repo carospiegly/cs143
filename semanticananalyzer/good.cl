@@ -1,7 +1,7 @@
 class C {
 	a : Int;
 	b : Bool;
-	init(x : Int, y : Bool) : C {
+	init(x : Int, y : Bool) : SELF_TYPE {
            {
 		a <- x;
 		b <- y;
@@ -11,7 +11,7 @@ class C {
 };
 
 Class Main {
-	main(): Int {
-	  5
+	main(): C {
+	  (new C).init(1,true)
 	};
 };
