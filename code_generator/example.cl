@@ -61,9 +61,12 @@ Class F {
 
 Class Y inherits A{
         a : Int;
+=======
+Class C2 {
         foo(x : Int) : Int {
            {
-                a <- x;
+
+              Int a <- x;
            }
         };
 };

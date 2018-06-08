@@ -58,7 +58,9 @@ public:
    virtual Symbol* get_type_decl() = 0;
    virtual std::vector<Symbol> get_params_and_rt() = 0;
    virtual Expression get_expression_to_check() = 0;
-
+   virtual Symbol get_return_type() = 0;
+   virtual Formals get_formals() = 0;
+   
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -72,7 +74,8 @@ class Formal_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
-   virtual Symbol get_type_decl() = 0;
+   virtual Symbol* get_type_decl() = 0;
+   virtual Symbol get_name() = 0;
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
 #endif
@@ -88,7 +91,7 @@ public:
    virtual Expression copy_Expression() = 0;
    virtual Symbol type_check(	SymbolTable<Symbol,Symbol> *symtab,
 				std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-				ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap ) = 0;
+				void*, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap ) = 0;
    Symbol least_upper_bound (Symbol symbol1, Symbol symbol2, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap);
    bool is_subtypeof(Symbol child, Symbol parent, std::map<Symbol,Symbol> _child_to_parent_classmap);
 #ifdef Expression_EXTRAS
@@ -104,7 +107,9 @@ class Case_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Case(); }
    virtual Case copy_Case() = 0;
-
+   virtual Symbol get_type_decl() = 0;
+   virtual Expression get_expr() = 0;
+   virtual Symbol get_name() = 0;
 #ifdef Case_EXTRAS
    Case_EXTRAS
 #endif
@@ -174,6 +179,7 @@ public:
    }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
+  
 
    Features get_features()
    {
@@ -214,6 +220,10 @@ public:
    {
 	return name;
    }
+
+   Formals get_formals(){
+      return formals;
+   }
      Symbol *get_type_decl();
   
    /* We extract the Symbols from out of the formals list */
@@ -224,7 +234,7 @@ public:
       {
          // we don't make a local variable of class "formal_class"
          // because class is defined below ...
-         Symbol formal_type = formals->nth(i)->get_type_decl();
+         Symbol formal_type = *(formals->nth(i)->get_type_decl());
          params_and_rt.push_back(formal_type);
       }
       params_and_rt.push_back(return_type);
@@ -234,6 +244,10 @@ public:
    Expression get_expression_to_check()
    {
       return expr;
+   }
+
+   Symbol get_return_type(){
+      return return_type;
    }
 
 #ifdef Feature_SHARED_EXTRAS
@@ -274,6 +288,10 @@ public:
         return &type_decl;
    }
 
+Formals get_formals(){
+      Formals frmls;
+      return frmls;
+   }
    std::vector<Symbol> get_params_and_rt()
    {
 	// attributes have no parameters or return type, so we return dummy value
@@ -284,6 +302,9 @@ public:
    Expression get_expression_to_check()
    {
       return init;
+   }
+   Symbol get_return_type(){
+      return type_decl;
    }
 
 #ifdef Feature_SHARED_EXTRAS
@@ -308,9 +329,12 @@ public:
    Formal copy_Formal();
    void dump(ostream& stream, int n);
 
-   Symbol get_type_decl() 
+   Symbol *get_type_decl() 
    {
-      return type_decl;
+      return &type_decl;
+   }
+   Symbol get_name(){
+      return name;
    }
 
 #ifdef Formal_SHARED_EXTRAS
@@ -336,7 +360,17 @@ public:
    }
    Case copy_Case();
    void dump(ostream& stream, int n);
+   Symbol get_type_decl(){
+      return type_decl;
+   }
 
+   Symbol get_name(){
+      return name;
+   }
+
+   Expression get_expr(){
+      return expr;
+   }
 #ifdef Case_SHARED_EXTRAS
    Case_SHARED_EXTRAS
 #endif
@@ -467,7 +501,8 @@ public:
 };
 
 
-// define constructor - typcase
+// define constructor - let
+
 class typcase_class : public Expression_class {
 protected:
    Expression expr;

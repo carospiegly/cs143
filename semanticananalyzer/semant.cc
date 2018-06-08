@@ -116,22 +116,24 @@ ClassTable::ClassTable(Classes classes) : 	_classes(classes),
 	//list_node<Class__class *> class_deep_copy = classes->copy_list(); // make a deep copy. We might need to modify it as we go???	
 
     // method map is indexed by Class Symbol, Method Symbol
-
+    //std::set<Symbol> valid_classes;
 	// PASS 1 -- make a set with all of the class names (not including the parent each is inherited from)
-	gather_valid_classes();
+	install_basic_classes();
+    gather_valid_classes();
 
 	// PASS 2 -- MAKE SURE THAT EACH CLASS THAT WAS INHERITED FROM WAS REAL
-	verify_parent_classes_are_defined();
+	//verify_parent_classes_are_defined(_classes, valid_classes);
 
 	// PASS 3 over the program
 	// keep global counter of how many classes we have seen so far, and this is the unique ID for each class
-	populate_child_parent_and_unique_ID_maps(); 
+	//populate_child_parent_and_unique_ID_maps(_classes, valid_classes); 
 	
 	// unique_class_idx holds the total number of classes
 	bool is_cyclic = check_inheritance_graph_for_cycles();
 	if (is_cyclic)
 	{
 		error_stream << "THROW ERROR! Graph is cyclic";
+        semant_error();
 	}
 	// RETURN SOME VALUE return is_cyclic;
 
@@ -142,21 +144,27 @@ ClassTable::ClassTable(Classes classes) : 	_classes(classes),
    (not including the parent each is inherited from).
    The size of the set is how many classes we have seen so far.
 */
-void ClassTable::gather_valid_classes() 
+void ClassTable::gather_valid_classes( ) 
 {
+
     // in what cases would this not be equal to classes.len()?
     for(int i = _classes->first(); _classes->more(i); i = _classes->next(i))
     {
             Class__class *curr_class = _classes->nth(i);
             Symbol curr_class_name = curr_class->get_name();
+            
             if( _valid_classes.find(curr_class_name) == _valid_classes.end() )
             {
                     // does not exist in the map yet
+               
                     _valid_classes.insert( curr_class_name );
             } else {
                     error_stream << "THROW ERROR! CLASS DEFINED TWICE\n" ;
             }
     }
+
+    verify_parent_classes_are_defined( );
+    populate_child_parent_and_unique_ID_maps(); 
 
 }
 
@@ -164,15 +172,17 @@ void ClassTable::gather_valid_classes()
         // PASS 2 MAKE SURE THAT EACH CLASS THAT WAS INHERITED FROM WAS REAL
     // decremenet the size of the set (total number of classes) if any of them were fake
 */
-void ClassTable::verify_parent_classes_are_defined()
+void ClassTable::verify_parent_classes_are_defined( )
 {
+
 	for(int i = _classes->first(); _classes->more(i); i = _classes->next(i))
 	{
 		Class__class *curr_class = _classes->nth(i);
 		Symbol child_class_name = curr_class->get_name();
 		Symbol parent_class_name = curr_class->get_parent();
+      
 		// If it has no parent, parent is type Object
-		if( (parent_class_name!= Object) && ( _valid_classes.find(parent_class_name) == _valid_classes.end() ) )
+		if( (_valid_classes.find(parent_class_name) == _valid_classes.end())  )
 		{
 			_valid_classes.erase(child_class_name);
 			error_stream << "THROW ERROR! child inherits from an undefined class\n";
@@ -181,17 +191,20 @@ void ClassTable::verify_parent_classes_are_defined()
 }
 
 
-void ClassTable::populate_child_parent_and_unique_ID_maps()
+void ClassTable::populate_child_parent_and_unique_ID_maps( )
 {
     int unique_class_idx = 0;
 	for(int i = _classes->first(); _classes->more(i); i = _classes->next(i))
     {
         Class__class *curr_class = _classes->nth(i);
         Symbol child_class_name = curr_class->get_name();
+
         Symbol parent_class_name = curr_class->get_parent();
         if( _valid_classes.find(child_class_name) != _valid_classes.end() )
         {
-	    _declared_classes_map.insert(std::make_pair(child_class_name, curr_class));
+
+
+	       _declared_classes_map.insert(std::make_pair(child_class_name, curr_class));
             // besides acyclicity, we can say this class is legit bc it persisted in the valid classes set
             // if this class does not inherit from anybody, do not record it having any parent
             _child_to_parent_classmap.insert(std::make_pair(child_class_name, parent_class_name ));
@@ -200,11 +213,41 @@ void ClassTable::populate_child_parent_and_unique_ID_maps()
 
             // add the class to the symbol table
             // add the methods of this class to the methodtable
-            add_class_methods_to_method_map(curr_class);
+            
+            
+
+        }else{
+           
         }
     }
-	// assert size of set is the same size as the number of unique classes
-	assert( unique_class_idx == (int)_valid_classes.size() );
+
+    for(int l = _classes->first(); _classes->more(l); l = _classes->next(l))
+    {
+        Class__class *curr_class = _classes->nth(l);
+
+        add_class_methods_to_method_map(curr_class);
+    }
+
+
+    _child_to_parent_classmap.insert(std::make_pair(IO, Object));
+
+    _symbol_to_class_index_map.insert(std::make_pair(IO,unique_class_idx));
+    unique_class_idx +=1;
+    _child_to_parent_classmap.insert(std::make_pair(Str, Object));
+    _symbol_to_class_index_map.insert(std::make_pair(Str,unique_class_idx));
+    unique_class_idx +=1;
+    _child_to_parent_classmap.insert(std::make_pair(Bool, Object));
+    _symbol_to_class_index_map.insert(std::make_pair(Bool,unique_class_idx));
+    unique_class_idx +=1;
+    _child_to_parent_classmap.insert(std::make_pair(Int, Object));
+    _symbol_to_class_index_map.insert(std::make_pair(Int,unique_class_idx));
+    unique_class_idx +=1;
+	_child_to_parent_classmap.insert(std::make_pair(Object, No_class));
+    _symbol_to_class_index_map.insert(std::make_pair(Object,unique_class_idx));
+    
+    assert(unique_class_idx+1 == (int)_valid_classes.size());
+
+    // assert size of set is the same size as the number of unique classes
 }
 
 
@@ -231,6 +274,29 @@ void ClassTable::add_class_methods_to_method_map(Class__class *curr_class)
             _method_map.insert(std::make_pair( key, params_and_rt ));
         }
     }
+
+
+// while (curr_class_name!=Object && curr_class->get_parent()!=NULL){
+// Class__class *par_class = _declared_classes_map.find(curr_class->get_parent())->second;
+// list_node<Feature> *par_features = par_class->get_features();
+//     for(int k = par_features->first(); par_features->more(k); k = par_features->next(k))
+//     {
+//         Feature_class *curr_feat = par_features->nth(k);
+//         // every feature is either a method, or an attribute
+//         if (curr_feat->feat_is_method() ) // I am a method! ;
+//         {
+//             // key is (curr class, name of the method)
+//             std::pair<Symbol,Symbol> key = std::make_pair( curr_class_name, curr_feat->get_name() );
+
+//             // the value is the std::vector<Symbols>, all parameters and then return type
+//             std::vector<Symbol> params_and_rt = std::vector<Symbol>( curr_feat->get_params_and_rt() );
+
+//             // if its a method, then we need to add it to the method table
+//             _method_map.insert(std::make_pair( key, params_and_rt ));
+//         }
+//     }
+// }
+
 }
 
 
@@ -240,7 +306,7 @@ std::map<std::pair<Symbol,Symbol>, std::vector<Symbol> >  ClassTable::get_method
 }
 
 
-void ClassTable::install_basic_classes() {
+ void ClassTable::install_basic_classes( ) {
 
     // The tree package uses these globals to annotate the classes built below.
    // curr_lineno  = 0;
@@ -341,12 +407,28 @@ void ClassTable::install_basic_classes() {
 	       filename);
 
 
-	_declared_classes_map.insert(std::make_pair( Object , Object_class));
-	_declared_classes_map.insert(std::make_pair( IO , IO_class));
-	_declared_classes_map.insert(std::make_pair( Int , Int_class));
-	_declared_classes_map.insert(std::make_pair( Bool , Bool_class));
-	_declared_classes_map.insert(std::make_pair( Str , Str_class));
+_valid_classes.insert(Str);
+_valid_classes.insert(Int);
+_valid_classes.insert(Bool);
+_valid_classes.insert(Object);
+_valid_classes.insert(IO);
+   
+ _declared_classes_map.insert(std::make_pair(Int, Int_class));
+  _declared_classes_map.insert(std::make_pair(Bool,Bool_class));
+   _declared_classes_map.insert(std::make_pair(Str, Str_class));
+    _declared_classes_map.insert(std::make_pair(Object, Object_class));
+     _declared_classes_map.insert(std::make_pair(IO, IO_class));
 
+     add_class_methods_to_method_map(Object_class);
+     add_class_methods_to_method_map(IO_class);
+     add_class_methods_to_method_map(Str_class);
+     add_class_methods_to_method_map(Int_class);
+     add_class_methods_to_method_map(Bool_class);
+  // Classes append2 = append_Classes(single_Classes(IO_class) ,single_Classes(Object_class));
+    
+   //Classes append1 =  append_Classes(append_Classes( single_Classes(Bool_class) , single_Classes(Str_class)), append_Classes(_classes, single_Classes(Int_class)));
+ 
+ // _classes = append_Classes( append1, append2); 
 
 
 }
@@ -414,10 +496,7 @@ void program_class::semant()
     std::map<Symbol, Class_> declared_classes_map = classtable->get_class_map();
 
     // Add Object?, IO, Int, Str, and Bool to the child_to_parent_classmap
-    child_to_parent_classmap.insert(std::make_pair(Bool, Object));
-    child_to_parent_classmap.insert(std::make_pair(Int, Object));
-    child_to_parent_classmap.insert(std::make_pair(Str, Object));
-    child_to_parent_classmap.insert(std::make_pair(IO, Object));
+   
 
     bool Main_class_missing = ( valid_classes.find(Main) == valid_classes.end() );
     if (Main_class_missing)
@@ -431,25 +510,26 @@ void program_class::semant()
     {
         std::cout << "main method missing in Main class.";
     }
+    
+
 
     // Perform all type checking
     for(std::set<Symbol>::iterator it = valid_classes.begin(); it != valid_classes.end(); it++)
     {
-        id_to_type_symtab->enterscope();
+
+
         Symbol curr_class_symbol = *it; 
+        if (!(curr_class_symbol== Bool || curr_class_symbol == Str || curr_class_symbol == IO || curr_class_symbol == Object || *it == Int)){
         Class__class *curr_class = declared_classes_map.find(curr_class_symbol)->second;
-        add_own_attributes_to_scope(curr_class_symbol, declared_classes_map, id_to_type_symtab);
-        add_parent_attributes_to_scope(child_to_parent_classmap, 
-                                        declared_classes_map, 
-                                        curr_class_symbol,
-                                        id_to_type_symtab);
+         
         verify_type_of_all_class_features(  id_to_type_symtab, 
                                             method_map,
-                                            classtable->semant_error(curr_class), /* ostream& error_stream */
+                                            classtable, /* ostream& error_stream */
                                             curr_class_symbol, 
                                             child_to_parent_classmap,
                                             declared_classes_map);
-        id_to_type_symtab->exitscope(); 
+        }
+         
     }
 
     if (classtable->errors()) {
@@ -467,22 +547,99 @@ void program_class::semant()
 */
 void program_class::verify_type_of_all_class_features(  SymbolTable<Symbol,Symbol> *symtab,
                                                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                                        ostream& error_stream, 
+                                                        void* classtable, 
                                                         Symbol curr_class_symbol, 
                                                         std::map<Symbol,Symbol> & _child_to_parent_classmap,
                                                         std::map<Symbol,Class_> & declared_classes_map)
 {
+
     list_node<Feature> *curr_features = (declared_classes_map.find(curr_class_symbol)->second)->get_features();
     for(int i = curr_features->first(); curr_features->more(i); i = curr_features->next(i))
     {
+
+        symtab->enterscope();
+std::set<Symbol> vlid_set = ((ClassTableP)(classtable))->get_class_set();
+for(std::set<Symbol>::iterator iter = vlid_set.begin(); iter != vlid_set.end(); iter++)
+    {
+            Symbol curr_class = *iter;
+            Symbol* address = new Symbol();
+            Symbol curr_type = curr_class;
+            *address = curr_type;
+            symtab->addid(curr_class, address);
+    }
+  
+    Symbol* addr = new Symbol();
+    Symbol curr_type = curr_class_symbol;
+    *addr  = curr_type;
+    symtab->addid(self, addr);
+
+add_own_attributes_to_scope(curr_class_symbol, declared_classes_map, symtab);
+       
+        add_parent_attributes_to_scope(_child_to_parent_classmap, 
+                                        declared_classes_map, 
+                                        curr_class_symbol,
+                                        symtab);
+
+
+
+
         Feature_class *curr_feat = curr_features->nth(i);
+
+
+
+
         if (curr_feat->feat_is_method() )
         {
-            Symbol method_type = curr_feat->get_expression_to_check()->type_check(symtab, method_map, error_stream, curr_class_symbol, _child_to_parent_classmap);
+
+            //check number of formals
+            //type check formals
+            //type check return type
+            
+            //add formals
+
+Formals formals_list = curr_feat->get_formals();
+ std::vector<Symbol> true_formals = method_map.find(std::make_pair(curr_class_symbol, curr_feat->get_name()))->second; 
+            
+
+           
+            
+            for(int k = formals_list->first(); formals_list->more(k); k = formals_list->next(k)){
+                
+                Formal_class *forml = formals_list->nth(k);
+                Symbol* type_decl = new Symbol();
+                Symbol typ = *(forml->get_type_decl());
+                *type_decl  = typ;
+                Symbol name = forml->get_name();
+                symtab->addid(name, type_decl);
+
+            }
+            Symbol method_type = (curr_feat->get_expression_to_check())->type_check(symtab, method_map, classtable, curr_class_symbol, _child_to_parent_classmap);
+
+            Symbol ret_type = curr_feat->get_return_type();
+             
+             if(ret_type == SELF_TYPE){
+                ret_type = curr_class_symbol;
+                if(((ClassTableP)classtable)->is_subtypeof(ret_type, method_type, _child_to_parent_classmap)){
+                    ret_type = method_type;
+                }
+            }
+        if ( !((ClassTableP)classtable)->is_subtypeof(method_type, ret_type, _child_to_parent_classmap) ){
+        ((ClassTableP)classtable)->get_error_stream() << "Inferred return type of method does not conform to declared return type."<<endl;
+        ((ClassTableP)classtable)->semant_error();
+       }
+            
+    
+           
         } else {
-            Symbol attr_type = curr_feat->get_expression_to_check()->type_check(symtab, method_map, error_stream, curr_class_symbol, _child_to_parent_classmap);
+            
+            Symbol attr_type = curr_feat->get_expression_to_check()->type_check(symtab, method_map, classtable, curr_class_symbol, _child_to_parent_classmap);
         }
+
+
+        symtab->exitscope();
     }
+
+
 }
 
 
@@ -490,15 +647,24 @@ void program_class::add_own_attributes_to_scope(Symbol curr_class,
                                                 std::map<Symbol,Class_> & declared_classes_map,
                                                 SymbolTable<Symbol,Symbol> *id_to_type_symtab)
 {
+   
     // loop over each feature
     // if that feature is an attribute, add it to the symbol table
+    
     list_node<Feature> *curr_features = (declared_classes_map.find(curr_class)->second)->get_features();
     for(int i = curr_features->first(); curr_features->more(i); i = curr_features->next(i))
     {
         Feature_class *curr_feat = curr_features->nth(i);
         if (!curr_feat->feat_is_method() )
         {
-            id_to_type_symtab->addid( curr_feat->get_name(), curr_feat->get_type_decl() );
+
+            Symbol* type_decl = new Symbol();
+            Symbol typ= *curr_feat->get_type_decl();
+            *type_decl  = typ;
+
+            
+
+            id_to_type_symtab->addid( curr_feat->get_name(), type_decl );
         } 
     }
 }
@@ -508,21 +674,29 @@ void program_class::add_parent_attributes_to_scope(std::map<Symbol,Symbol> & chi
                                     Symbol curr_class,
                                     SymbolTable<Symbol,Symbol> *id_to_type_symtab)
 {
+   
     // get the first parent
+    if(curr_class!=Object){
     Symbol parent = (child_to_parent_classmap.find(curr_class))->second;
-    while( parent!= Object ){
+    while( true ){
         // get the parent's features
+        if(declared_classes_map.find(parent)==declared_classes_map.end()) break;
         list_node<Feature> *curr_features = (declared_classes_map.find(parent)->second)->get_features();
         for(int i = curr_features->first(); curr_features->more(i); i = curr_features->next(i))
         {
             Feature_class *curr_feat = curr_features->nth(i);
             if (!curr_feat->feat_is_method() )
             {
-                id_to_type_symtab->addid( curr_feat->get_name(), curr_feat->get_type_decl() );
+
+                Symbol* type_decl = new Symbol();
+            Symbol typ= *curr_feat->get_type_decl();
+            *type_decl  = typ;
+                id_to_type_symtab->addid( curr_feat->get_name(), type_decl );
             } 
         }
         parent = child_to_parent_classmap.find(parent)->second;
     }
+}
 }
 
 
@@ -619,7 +793,6 @@ bool ClassTable::check_inheritance_graph_for_cycles()
             Symbol child_class_name = it->first;
             int parent_idx = _symbol_to_class_index_map.find( parent_class_name )->second;
             int child_idx = _symbol_to_class_index_map.find( child_class_name )->second;
-            std::cout << "Adding edge from " << parent_idx << " to " << child_idx << std::endl;
             g.addEdge(parent_idx, child_idx);
         } 
     }
@@ -628,10 +801,14 @@ bool ClassTable::check_inheritance_graph_for_cycles()
         std::cout << "Graph contains cycle" << std::endl;
         return true;
     } else {
-        std::cout << "Graph doesn't contain cycle" << std::endl;
         return false;
     }
 }
+
+
+
+
+
 
 
 Symbol *method_class::get_type_decl()
@@ -643,37 +820,44 @@ Symbol *method_class::get_type_decl()
 Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
                                             std::map<std::pair<Symbol,Symbol>,
                                             std::vector<Symbol> > & method_map,
-                                            ostream& error_stream, 
+                                            void* classtable, 
                                             Symbol class_symbol, 
                                             std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     //must conform to the type as type_name
-    Symbol dispatch_class = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap); 
+    Symbol dispatch_class = expr->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap); 
     if ( !is_subtypeof(dispatch_class, type_name, _child_to_parent_classmap) ){
-        error_stream << "Static dispatch class did not conform.";
+        ((ClassTableP)classtable)->get_error_stream() << "Static dispatch class did not conform."<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
     std::vector<Symbol> method_formals = method_map.find(std::make_pair(type_name, name))->second; 
     std::vector<Symbol> dispatch_formals; 
     for(int i = actual->first(); actual->more(i); i = actual->next(i))
     {
-        dispatch_formals.push_back(actual->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap));
+        dispatch_formals.push_back(actual->nth(i)->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap));
     }
     // check number of args is right -- we added return type to method_formals
     if (dispatch_formals.size() != (method_formals.size()-1) )
     {
-        error_stream << "You tried to call a function, but didnt supply the right number of args.";
+        ((ClassTableP)classtable)->get_error_stream() << "You tried to call a function, but didnt supply the right number of args."<<endl;
+        ((ClassTableP)classtable)->semant_error();
+
     }
     for( size_t j = 0; j < dispatch_formals.size(); j++ )
     {
         //check that used dispatch formal is a subtype of declared method formal
         if ( !is_subtypeof(dispatch_formals[j], method_formals[j], _child_to_parent_classmap) ){
-            error_stream << "Dispatch formal did not conform.";
+            ((ClassTableP)classtable)->get_error_stream() << "Dispatch formal did not conform."<<endl;
+            ((ClassTableP)classtable)->semant_error();
         }
     }
 
-    // check if the return type is SELF_TYPE
-    if ( method_formals.back() == SELF_TYPE ) return dispatch_class; 
-    return *method_formals.end();
+    Symbol ret_type = method_formals[method_formals.size()-1];    // check if the return type is SELF_TYPE
+    if ( ret_type == SELF_TYPE ){
+        return dispatch_class;
+    }  
+       
+    return ret_type;
 }
 
 /*
@@ -682,45 +866,92 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
 */
 Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                    ostream& error_stream, 
+                                    void* classtable, 
                                     Symbol class_symbol, 
                                     std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     //must conform to the type as type_name
-    Symbol dispatch_class = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap); 
-    std::vector<Symbol> method_formals = method_map.find(std::make_pair(dispatch_class, name))->second; 
+    Symbol dispatch_class = expr->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap); 
+   
+    std::map<Symbol, Class_> declared_classes_map = ((ClassTableP)classtable)->get_class_map();
+    std::vector<Symbol> method_formals;
+    Symbol disp_class = dispatch_class;
+
+    if(method_map.find(std::make_pair(dispatch_class, name)) == method_map.end()){
+
+    while(true){
+
+        if(_child_to_parent_classmap.find(disp_class) == _child_to_parent_classmap.end()){
+            //no parents
+        ((ClassTableP)classtable)->get_error_stream() << "No matching method declaration."<<endl;
+        ((ClassTableP)classtable)->semant_error();
+        return Object;
+
+        }
+        //get parent
+        Symbol disp_parent = (_child_to_parent_classmap).find(disp_class)->second; 
+
+
+        if(method_map.find(std::make_pair(disp_parent, name)) != method_map.end()){
+            method_formals = method_map.find(std::make_pair(disp_parent, name))->second;
+            break;
+        }
+
+        disp_class = disp_parent;
+    }
+
+}else{
+        method_formals = method_map.find(std::make_pair(dispatch_class, name))->second;
+
+    }
+
+
     std::vector<Symbol> dispatch_formals; 
     for(int i = actual->first(); actual->more(i); i = actual->next(i))
     {
-        dispatch_formals.push_back(actual->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap));
+
+        dispatch_formals.push_back(actual->nth(i)->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap));
     }
     // check number of args is right -- we added return type to method_formals
     if (dispatch_formals.size() != (method_formals.size()-1) )
     {
-        error_stream << "You tried to call a function, but didnt supply the right number of args.";
+        ((ClassTableP)classtable)->get_error_stream() << "You tried to call a function, but didnt supply the right number of args."<<endl;
+        ((ClassTableP)classtable)->semant_error();
+        return Object;
+
     }
     for( size_t j = 0; j < dispatch_formals.size(); j++ )
     {
         //check that used dispatch formal is a subtype of declared method formal
         if ( !is_subtypeof(dispatch_formals[j], method_formals[j], _child_to_parent_classmap) ){
-            error_stream << "Dispatch formal did not conform.";
+            ((ClassTableP)classtable)->get_error_stream() << "Dispatch formal did not conform."<<endl;
+            ((ClassTableP)classtable)->semant_error();
+            return Object;
         }
     }
-    if ( *method_formals.end() == SELF_TYPE ) return dispatch_class; 
-    return *method_formals.end();
+    Symbol ret_type = method_formals[method_formals.size()-1];
+    // check if the return type is SELF_TYPE
+
+    if ( ret_type == SELF_TYPE ){
+
+       
+        return dispatch_class; 
+    } 
+    return ret_type;
 } 
 
 
 Symbol loop_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                    void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-  if ( pred->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap) != Bool )
+  if ( pred->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap) != Bool )
   {
-     error_stream << "You did not use a boolean predicate for the while loop";
+     ((ClassTableP)classtable)->get_error_stream() << "You did not use a boolean predicate for the while loop"<<endl;
+     ((ClassTableP)classtable)->semant_error();
   }
 
- body->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap); 
+ body->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap); 
 
   type = Object;
   return Object;
@@ -730,12 +961,13 @@ Symbol loop_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol plus_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                    void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
-  if(! (	(e1->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int) 
-	&& (e2 ->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int))	 ){
-    error_stream << "Attempted to add two non-integers";
+  if(! (	(e1->type_check(symtab,method_map, classtable, class_symbol, _child_to_parent_classmap) == Int) 
+	&& (e2 ->type_check(symtab,method_map, classtable, class_symbol, _child_to_parent_classmap) == Int))	 ){
+  ((ClassTableP)classtable)->get_error_stream() << "Attempted to add two non-integers"<<endl;
+   ((ClassTableP)classtable)->semant_error();
   }
 
   type = Int;
@@ -745,13 +977,14 @@ Symbol plus_class::type_check(     SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol sub_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                    void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
-  if(! (    (e1->type_check(symtab,method_map,error_stream,class_symbol, _child_to_parent_classmap) == Int)
-            && (e2 ->type_check(symtab,method_map,error_stream,class_symbol, _child_to_parent_classmap) == Int))     ){
+  if(! (    (e1->type_check(symtab,method_map,classtable,class_symbol, _child_to_parent_classmap) == Int)
+            && (e2 ->type_check(symtab,method_map,classtable,class_symbol, _child_to_parent_classmap) == Int))     ){
      //error
-    error_stream << "Attempted to add two non-integers";
+    ((ClassTableP)classtable)->get_error_stream() << "Attempted to subtract two non-integers"<<endl;
+    ((ClassTableP)classtable)->semant_error(); 
   }
   type = Int;
 
@@ -763,9 +996,9 @@ Symbol sub_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol isvoid_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                    void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-  e1->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap); 
+  e1->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap); 
   type = Bool;
   return Bool;
 }
@@ -773,10 +1006,10 @@ Symbol isvoid_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol no_expr_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                    void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
   // can use "this" if needed
-  return Object; // ????
+  return No_class; 
 }
 
 
@@ -784,14 +1017,15 @@ Symbol no_expr_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol mul_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                     std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                    ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                    void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
 
-  if(! (    (e1->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int)
-            && (e2 ->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int))     ){
+  if(! (    (e1->type_check(symtab,method_map,classtable, class_symbol, _child_to_parent_classmap) == Int)
+            && (e2 ->type_check(symtab,method_map,classtable, class_symbol, _child_to_parent_classmap) == Int))     ){
      //error
-    error_stream << "Attempted to add two non-integers";
+    ((ClassTableP)classtable)->get_error_stream() << "Attempted to multiply two non-integers"<<endl;
+    ((ClassTableP)classtable)->semant_error();
   }
 
   type = Int;
@@ -801,13 +1035,14 @@ Symbol mul_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
  Symbol divide_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                        void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
-  if(! (    (e1->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int)
-            && (e2 ->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) == Int))     ){
+  if(! (    (e1->type_check(symtab,method_map,classtable, class_symbol, _child_to_parent_classmap) == Int)
+            && (e2 ->type_check(symtab,method_map,classtable, class_symbol, _child_to_parent_classmap) == Int))     ){
      //error
-    error_stream << "Attempted to add two non-integers";
+    ((ClassTableP)classtable)->get_error_stream() << "Attempted to add two non-integers"<<endl;
+    ((ClassTableP)classtable)->semant_error();
 
   }
 
@@ -818,12 +1053,13 @@ Symbol mul_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
  Symbol neg_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                         std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                        ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                       void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
-  if(! (e1->type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap) != Int) ){
+  if(! (e1->type_check(symtab,method_map,classtable, class_symbol, _child_to_parent_classmap) == Int) ){
      //error
-     error_stream << "You tried to negate a non-integer";
+     ((ClassTableP)classtable)->get_error_stream() << "You tried to negate a non-integer"<<endl;
+     ((ClassTableP)classtable)->semant_error();
 
   }
 
@@ -835,12 +1071,13 @@ Symbol mul_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 Symbol lt_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,
                             std::vector<Symbol> > & method_map,
-                            ostream& error_stream, 
+                            void* classtable, 
                             Symbol class_symbol, 
                             std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-    if(! (((e1-> type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap)) == Int) && ((e2 -> type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap)) == Int))){
-        error_stream << "Attempted to compare two non-integers";
+    if(! (((e1-> type_check(symtab,method_map,classtable, class_symbol, _child_to_parent_classmap)) == Int) && ((e2 -> type_check(symtab,method_map,classtable, class_symbol, _child_to_parent_classmap)) == Int))){
+        ((ClassTableP)classtable)->get_error_stream() << "Attempted to compare two non-integers"<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
     type = Bool;
     return Bool;
@@ -851,23 +1088,26 @@ Symbol lt_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 Symbol eq_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,
                             std::vector<Symbol> > & method_map,
-                            ostream& stream, 
+                            void* classtable, 
                             Symbol class_symbol, 
                             std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-    Symbol T1 = e1->type_check( symtab, method_map, stream, class_symbol,_child_to_parent_classmap);
-    Symbol T2 = e2->type_check( symtab, method_map, stream, class_symbol, _child_to_parent_classmap);
+    Symbol T1 = e1->type_check( symtab, method_map, classtable, class_symbol,_child_to_parent_classmap);
+    Symbol T2 = e2->type_check( symtab, method_map,  classtable, class_symbol, _child_to_parent_classmap);
 
     if ( ((T1 == Bool) && (T2 != Bool)) || ((T2 == Bool) && (T1 != Bool)) ){
-        stream << "You tried to check different types for equality v bad";
+        ((ClassTableP)classtable)->get_error_stream() << "You tried to check different types for equality."<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
     if ( ((T1 == Int) && (T2 != Int)) || ((T2 == Int) && (T1 != Int)) )
     {
-        stream << "You tried to check different types for equality v bad";
+       ((ClassTableP)classtable)->get_error_stream() << "You tried to check different types for equality v bad"<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
     if ( ((T1 == Str) && (T2 != Str)) || ((T2 == Str) && (T1 != Str)) )
     {
-        stream << "You tried to check different types for equality v bad";
+        ((ClassTableP)classtable)->get_error_stream() << "You tried to check different types for equality v bad"<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
     type = Bool;
     return Bool;
@@ -877,10 +1117,11 @@ Symbol eq_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol leq_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                            ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                            void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-    if(! (((e1-> type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap)) == Int) && ((e2 -> type_check(symtab,method_map,error_stream, class_symbol, _child_to_parent_classmap)) == Int))){
-        error_stream << "Attempted to compare two non-integers";
+    if(! (((e1-> type_check(symtab,method_map, classtable, class_symbol, _child_to_parent_classmap)) == Int) && ((e2 -> type_check(symtab,method_map,classtable, class_symbol, _child_to_parent_classmap)) == Int))){
+        ((ClassTableP)classtable)->get_error_stream() << "Attempted to compare two non-integers"<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
     type = Bool;
     return Bool;
@@ -889,10 +1130,11 @@ Symbol leq_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol comp_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                            ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                            void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-    if( ( e1->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap) != Bool ) ) {
-        error_stream << "Attempted to get complement of a non Bool."; 
+    if( ( e1->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap) != Bool ) ) {
+        ((ClassTableP)classtable)->get_error_stream() << "Attempted to get complement of a non Bool."<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
     type = Bool;
     return Bool;
@@ -902,7 +1144,7 @@ Symbol comp_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
 Symbol string_const_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
                                         std::map<std::pair<Symbol,Symbol>,
                                         std::vector<Symbol> > & method_map,
-                                        ostream& error_stream,
+                                        void* classtable,
                                         Symbol class_symbol, 
                                         std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
@@ -917,7 +1159,7 @@ Symbol string_const_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
 Symbol new__class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,
                                 std::vector<Symbol> > & method_map,
-                                ostream& error_stream, 
+                                void* classtable, 
                                 Symbol class_symbol, 
                                 std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
@@ -929,14 +1171,18 @@ Symbol new__class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,
                                     std::vector<Symbol> > & method_map,
-                                    ostream& error_stream, 
+                                    void* classtable, 
                                     Symbol class_symbol, 
                                     std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
+    
+    
     Symbol *type_of_ID = symtab->lookup(name);
+   
     if( type_of_ID == NULL)
     {
-        error_stream << "This variable name was never defined";
+        ((ClassTableP)classtable)->get_error_stream() << "This variable name was never defined"<<endl;
+        ((ClassTableP)classtable)->semant_error();
         type = Object;
     } else {
         type = *type_of_ID;
@@ -949,7 +1195,7 @@ Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
 Symbol bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,
                                     std::vector<Symbol> > & method_map,
-                                    ostream& error_stream, 
+                                    void* classtable, 
                                     Symbol class_symbol, 
                                     std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
@@ -962,7 +1208,7 @@ Symbol bool_const_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 Symbol int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
                                     std::map<std::pair<Symbol,Symbol>,
                                     std::vector<Symbol> > & method_map,
-                                    ostream& error_stream,Symbol class_symbol, 
+                                    void* classtable,Symbol class_symbol, 
                                     std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     type = Int;
@@ -977,21 +1223,28 @@ Symbol int_const_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
 Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,
                             std::vector<Symbol> > & method_map,
-                            ostream& error_stream, 
+                            void* classtable, 
                             Symbol class_symbol, 
                             std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-    Symbol initType = init->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+    
+    Symbol initType = init->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
+    if(initType==No_class){ initType = type_decl;}
+    
     if( !is_subtypeof(initType, type_decl, _child_to_parent_classmap) )
     {
-        error_stream << "the let initialization was not a subtype of the declared type of the var";
+        ((ClassTableP)classtable)->get_error_stream() << "the let initialization was not a subtype of the declared type of the var"<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
 
     symtab->enterscope(); 
-    symtab->addid(identifier, &type_decl); // add x temporarily to the symbol table
-    Symbol bodyType = body->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+    
+    Symbol* address = new Symbol();
+    Symbol curr_type = type_decl;
+    *address = curr_type;
+    symtab->addid(identifier, address); // add x temporarily to the symbol table
+    Symbol bodyType = body->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
     symtab->exitscope(); // x is removed from the symbol table
-
     type = bodyType; 
     return type;
 }
@@ -1002,18 +1255,17 @@ Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
 */
 Symbol block_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                                void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     int num_exprs_in_block = body->len();
     for(int i = body->first(); body->more(i); i = body->next(i))
     {
-        Symbol curr_expr_type = body->nth(i)->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+        Symbol curr_expr_type = body->nth(i)->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
         
         // type of a block is the value of the last expression
-        if (i == (num_exprs_in_block-1) )
-        {
+       
             type = curr_expr_type;
-        }
+       
     }
     return type;
 }
@@ -1022,27 +1274,52 @@ Symbol block_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                                void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-   // expr->type_check(symtab, method_map, error_stream);
-   // for(int i = cases->first(); cases->more(i); i = cases->next(i))
-   //   cases->nth(i)->type_check(symtab, method_map, error_stream);
-    return Object; // FIX THIS, THIS IS WRONG
+        expr->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
+        std::list<Symbol> types;
+        Symbol return_case; 
+     for(int i = cases->first(); cases->more(i); i = cases->next(i)){
+        //go through branches and add variables to scope
+        symtab->enterscope();
+
+    
+    Symbol* address = new Symbol();
+    Symbol curr_type = cases->nth(i)->get_type_decl();
+    *address = curr_type;
+    symtab->addid(cases->nth(i)->get_name(), address); // add x temporarily to the symbol table
+    Symbol case_type = cases->nth(i)->get_expr()->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
+    types.push_back(case_type);
+    symtab->exitscope(); // x is r
+       
+    }
+    if(types.size() == 1){
+        return types.front();
+    }else{
+      std::list<Symbol>::iterator it;
+      return_case = least_upper_bound(types.front(),types.front(), class_symbol,  _child_to_parent_classmap );
+    for (it = types.begin(); it != types.end(); ++it){
+        return_case = least_upper_bound(return_case, *it, class_symbol, _child_to_parent_classmap );
+    }
+}
+    
+    return return_case; // FIX THIS, THIS IS WRONG
 }
 
 
 
 Symbol cond_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                             std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                            ostream& error_stream, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
+                            void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
-    if ( !(pred->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap) == Bool) )
+    if ( !(pred->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap) == Bool) )
     {
-        error_stream << "You use a conditional (if/then/else) without a boolean predicate";
+        ((ClassTableP)classtable)->get_error_stream() << "You use a conditional (if/then/else) without a boolean predicate"<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
-    Symbol e1_type = then_exp->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
-    Symbol e2_type = else_exp->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+    Symbol e1_type = then_exp->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
+    Symbol e2_type = else_exp->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
     type = least_upper_bound (e1_type, e2_type, class_symbol, _child_to_parent_classmap);
     return type;
 }
@@ -1050,19 +1327,21 @@ Symbol cond_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
 
 Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,std::vector<Symbol> > & method_map,
-                                ostream& error_stream, 
+                                void* classtable, 
                                 Symbol class_symbol, 
                                 std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
     Symbol *enforced_type_of_ID = symtab->lookup(name); // check if "Id" is defined 
     if( enforced_type_of_ID == NULL)
     {
-        error_stream << "ID missing in symtab: You cannot assign a variable that was not declared as a class attribute";
+        ((ClassTableP)classtable)->get_error_stream() << "ID missing in symtab: You cannot assign a variable that was not declared as a class attribute"<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
-    Symbol found_expr_type = expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+    Symbol found_expr_type = expr->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
 
     if ( !is_subtypeof(found_expr_type, *enforced_type_of_ID, _child_to_parent_classmap) ){
-        error_stream << "Assign class did not conform.";
+        ((ClassTableP)classtable)->get_error_stream() << "Assign class did not conform."<<endl;
+        ((ClassTableP)classtable)->semant_error();
     }
     type = found_expr_type; 
     return type;
@@ -1074,13 +1353,13 @@ Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 Symbol branch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                                 std::map<std::pair<Symbol,Symbol>,
                                 std::vector<Symbol> > & method_map,
-                                ostream& error_stream, 
+                                void* classtable, 
                                 Symbol class_symbol, 
                                 std::map<Symbol,Symbol> _child_to_parent_classmap )
 {
     // name
     // type_decl
-    expr->type_check(symtab, method_map, error_stream, class_symbol, _child_to_parent_classmap);
+    expr->type_check(symtab, method_map,  classtable, class_symbol, _child_to_parent_classmap);
     return Object; // FIX THIS LATER, ITS WRONG
 }
 
@@ -1090,21 +1369,32 @@ Symbol Expression_class::least_upper_bound (Symbol symbol1,
                                             Symbol class_symbol, 
                                             std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
+   
     if(symbol1 == symbol2) return symbol1;
     if(symbol1 == SELF_TYPE && symbol2 == SELF_TYPE) return SELF_TYPE;
     if(symbol1 == SELF_TYPE && symbol2 != SELF_TYPE) symbol1 = class_symbol;
     if(symbol2 == SELF_TYPE && symbol1 != SELF_TYPE) symbol2 = class_symbol;
 
     std::list<Symbol> parents1; 
+    parents1.push_back(symbol1);
+     if(_child_to_parent_classmap.find(symbol1)!=_child_to_parent_classmap.end()){
     Symbol parent1 = _child_to_parent_classmap.find(symbol1)->second;
-    while(parent1!= Object){
+
+    while(true){
+
         parents1.push_back(parent1);
+        if(_child_to_parent_classmap.find(parent1) == _child_to_parent_classmap.end()){
+            break;
+        }
         parent1 = (_child_to_parent_classmap).find(parent1)->second;  
     }
+    
+    }
 
+    if(_child_to_parent_classmap.find(symbol2)!=_child_to_parent_classmap.end()){
     Symbol parent2 = (_child_to_parent_classmap).find(symbol2)->second;
 
-    while(parent2 != Object){
+    while(true){
         std::list<Symbol>::iterator it;
         for (it = parents1.begin(); it != parents1.end(); ++it){
             if(parent2 == *it)
@@ -1112,13 +1402,46 @@ Symbol Expression_class::least_upper_bound (Symbol symbol1,
                 return parent2;
             }
         }
+        if(_child_to_parent_classmap.find(parent2) == _child_to_parent_classmap.end()){
+            break;
+        }
         parent2 = _child_to_parent_classmap.find(parent2)->second;
     }
+}
     return Object; 
 }
 
 
 bool Expression_class::is_subtypeof(  Symbol child, Symbol supposed_parent, 
+                                        std::map<Symbol,Symbol> _child_to_parent_classmap )
+{
+     if (child == supposed_parent) return true;
+    if (supposed_parent == Object ) return true;
+
+    // if the child is Object, the only way to get subtype_of is if the 
+    // parent is also an object
+    if ( (child==Object) && (supposed_parent != Object)) return false;
+    
+    std::list<Symbol> real_parents; 
+    if(_child_to_parent_classmap.find(child)!=_child_to_parent_classmap.end()){
+    Symbol real_parent = _child_to_parent_classmap.find(child)->second;
+    while(true){
+        real_parents.push_back(real_parent);
+        if((_child_to_parent_classmap).find(real_parent)== _child_to_parent_classmap.end()){
+            break;
+        }
+        real_parent = (_child_to_parent_classmap).find(real_parent)->second;  
+    }
+    }
+    std::list<Symbol>::iterator it;
+    for (it = real_parents.begin(); it != real_parents.end(); ++it){
+        Symbol found_parent = *it; 
+        if ( found_parent == supposed_parent) return true;
+    }
+    return false;
+}
+
+bool ClassTable::is_subtypeof(  Symbol child, Symbol supposed_parent, 
                                         std::map<Symbol,Symbol> _child_to_parent_classmap )
 {
     if (child == supposed_parent) return true;
@@ -1129,10 +1452,15 @@ bool Expression_class::is_subtypeof(  Symbol child, Symbol supposed_parent,
     if ( (child==Object) && (supposed_parent != Object)) return false;
     
     std::list<Symbol> real_parents; 
+    if(_child_to_parent_classmap.find(child)!=_child_to_parent_classmap.end()){
     Symbol real_parent = _child_to_parent_classmap.find(child)->second;
-    while(real_parent!= Object){
+    while(true){
         real_parents.push_back(real_parent);
+        if((_child_to_parent_classmap).find(real_parent)== _child_to_parent_classmap.end()){
+            break;
+        }
         real_parent = (_child_to_parent_classmap).find(real_parent)->second;  
+    }
     }
     std::list<Symbol>::iterator it;
     for (it = real_parents.begin(); it != real_parents.end(); ++it){
