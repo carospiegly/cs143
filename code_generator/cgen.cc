@@ -1311,6 +1311,19 @@ void CgenClassTable::print_class_init_code(bool is_object_init, CgenNodeP nd)
 
 		emit_jal(parent_buf, str);
 	}
+
+	// loop over all of your attributes
+	// and run the code on each of them 
+
+
+      Features curr_attributes = nd->get_features();
+      for(int j = curr_attributes->first(); curr_attributes->more(j); j = curr_attributes->next(j))
+      {
+        Feature curr_feat = curr_attributes->nth(j);
+        if(!curr_feat->feat_is_method()){
+          curr_feat->code(str);
+        }
+      }
 	// move SELF register contents into the accumulator
 	emit_move(ACC,SELF,str);
 	restore_stack_after_call(str);
@@ -1383,7 +1396,11 @@ void assign_class::code(ostream &s) {
 
   expr->code(s);
   // result is now in the accumulator
-
+  int offs = cgen_state.classtableptr->get_attribute_offset ( name->get_string() , cgen_state.curr_cgen_node );
+  
+  emit_load_address(T1,SELF,s);
+  emit_addiu(T1,T1,offs, s);
+  emit_store(ACC, 0, T1, s);
   //emit_load_address(char *dest_reg, char *address, s);
 
   // sw reg1 offset(reg2)
