@@ -625,22 +625,25 @@ Formals formals_list = curr_feat->get_formals();
              if(ret_type == SELF_TYPE){
             
              ret_type = curr_class_symbol;
-                }
-            //     if(((ClassTableP)classtable)->is_subtypeof(ret_type, method_type, _child_to_parent_classmap)){
-            //         ret_type = method_type;
+                
+                 if(((ClassTableP)classtable)->is_subtypeof(ret_type, method_type, _child_to_parent_classmap)){
+                 ret_type = method_type;
 
-            //     }
-            // }
+               }
+         }
         if ( !((ClassTableP)classtable)->is_subtypeof(method_type, ret_type, _child_to_parent_classmap) ){
         ((ClassTableP)classtable)->get_error_stream() << "Inferred return type of method does not conform to declared return type."<<endl;
         ((ClassTableP)classtable)->semant_error();
        }
+       curr_feat->set_type(method_type);
             
     
            
         } else {
             
             Symbol attr_type = curr_feat->get_expression_to_check()->type_check(symtab, method_map, classtable, curr_class_symbol, _child_to_parent_classmap);
+            curr_feat->set_type(attr_type);
+
         }
 
 
@@ -862,9 +865,10 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
 
     Symbol ret_type = method_formals[method_formals.size()-1];    // check if the return type is SELF_TYPE
     if ( ret_type == SELF_TYPE ){
+        type = SELF_TYPE;
         return dispatch_class;
     }  
-       
+    type = ret_type;
     return ret_type;
 }
 
@@ -933,6 +937,9 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
     }
     for( size_t j = 0; j < dispatch_formals.size(); j++ )
     {
+        if(dispatch_formals[j] == SELF_TYPE){
+            dispatch_formals[j]= class_symbol;
+        }
         //check that used dispatch formal is a subtype of declared method formal
         if ( !is_subtypeof(dispatch_formals[j], method_formals[j], _child_to_parent_classmap) ){
             ((ClassTableP)classtable)->get_error_stream() << "Dispatch formal did not conform."<<endl;
@@ -946,8 +953,10 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
     if ( ret_type == SELF_TYPE ){
 
       
+      type= SELF_TYPE;
         return dispatch_class; 
     } 
+    type=ret_type;
     return ret_type;
 
 } 
@@ -1021,8 +1030,9 @@ Symbol no_expr_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
                     void* classtable, Symbol class_symbol, std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
 
+    type = No_type;
   // can use "this" if needed
-  return SELF_TYPE; 
+  return No_type;
 }
 
 
@@ -1176,7 +1186,9 @@ Symbol new__class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                 void* classtable, 
                                 Symbol class_symbol, 
                                 std::map<Symbol,Symbol> _child_to_parent_classmap)
+
 {
+    type = type_name;
 	return type_name;
 }
 
@@ -1200,6 +1212,9 @@ Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
         type = Object;
     } else {
         type = *type_of_ID;
+    }
+    if(name == self){
+        return SELF_TYPE;
     }
 
     
@@ -1245,7 +1260,7 @@ Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
 {
     
     Symbol initType = init->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
-    if(initType==No_class){ initType = type_decl;}
+    if(initType== No_type){ initType = type_decl;}
     
     if( !is_subtypeof(initType, type_decl, _child_to_parent_classmap) )
     {
@@ -1310,6 +1325,7 @@ Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
        
     }
     if(types.size() == 1){
+        type = types.front();
         return types.front();
     }else{
       std::list<Symbol>::iterator it;
@@ -1318,7 +1334,7 @@ Symbol typcase_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
         return_case = least_upper_bound(return_case, *it, class_symbol, _child_to_parent_classmap );
     }
 }
-    
+    type = return_case;
     return return_case; // FIX THIS, THIS IS WRONG
 }
 
@@ -1365,19 +1381,6 @@ Symbol assign_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 
 
 
-
-Symbol branch_class::type_check(SymbolTable<Symbol,Symbol> *symtab,
-                                std::map<std::pair<Symbol,Symbol>,
-                                std::vector<Symbol> > & method_map,
-                                void* classtable, 
-                                Symbol class_symbol, 
-                                std::map<Symbol,Symbol> _child_to_parent_classmap )
-{
-    // name
-    // type_decl
-    expr->type_check(symtab, method_map,  classtable, class_symbol, _child_to_parent_classmap);
-    return Object; // FIX THIS LATER, ITS WRONG
-}
 
 
 Symbol Expression_class::least_upper_bound (Symbol symbol1, 

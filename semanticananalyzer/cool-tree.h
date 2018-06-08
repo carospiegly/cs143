@@ -55,12 +55,13 @@ public:
    virtual Feature copy_Feature() = 0;
    virtual bool feat_is_method() = 0;
    virtual Symbol get_name() = 0;
+   virtual void set_type(Symbol s) = 0;
    virtual Symbol* get_type_decl() = 0;
    virtual std::vector<Symbol> get_params_and_rt() = 0;
    virtual Expression get_expression_to_check() = 0;
    virtual Symbol get_return_type() = 0;
    virtual Formals get_formals() = 0;
-   
+
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -203,6 +204,8 @@ protected:
    Formals formals;
    Symbol return_type;
    Expression expr;
+   Symbol type;  
+
 public:
    method_class(Symbol a1, Formals a2, Symbol a3, Expression a4) {
       name = a1;
@@ -225,6 +228,8 @@ public:
       return formals;
    }
      Symbol *get_type_decl();
+
+void set_type(Symbol s) { type = s;  } 
   
    /* We extract the Symbols from out of the formals list */
    std::vector<Symbol> get_params_and_rt()
@@ -265,6 +270,8 @@ protected:
    Symbol name;
    Symbol type_decl;
    Expression init;
+   Symbol type;  
+
 public:
    attr_class(Symbol a1, Symbol a2, Expression a3) {
       name = a1;
@@ -288,6 +295,7 @@ public:
         return &type_decl;
    }
 
+void set_type(Symbol s) { type = s;  } 
 Formals get_formals(){
       Formals frmls;
       return frmls;

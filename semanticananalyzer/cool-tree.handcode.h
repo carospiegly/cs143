@@ -84,8 +84,7 @@ virtual void dump_with_types(ostream&,int) = 0; \
 
 
 #define Feature_SHARED_EXTRAS                                       \
-void dump_with_types(ostream&,int);    
-
+void dump_with_types(ostream&,int);    \
 
 
 #define Formal_EXTRAS                              \
