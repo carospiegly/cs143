@@ -1148,6 +1148,7 @@ Symbol string_const_class::type_check(	SymbolTable<Symbol,Symbol> *symtab,
                                         Symbol class_symbol, 
                                         std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
+    type= Str;
     return Str; 
 }
 
