@@ -501,14 +501,17 @@ void program_class::semant()
     bool Main_class_missing = ( valid_classes.find(Main) == valid_classes.end() );
     if (Main_class_missing)
     {
+
         std::cerr << "Main class missing";
+        classtable->semant_error();
     }
 
     bool main_method_missing = ( method_map.find(std::make_pair(Main, main_meth)) == method_map.end() );
     // check that main method takes no arguments
     if (main_method_missing)
     {
-        std::cout << "main method missing in Main class.";
+        std::cerr << "main method missing in Main class.";
+        classtable->semant_error();
     }
     
 
@@ -658,7 +661,6 @@ Formals formals_list = curr_feat->get_formals();
         } else {
             
             Symbol attr_type = curr_feat->get_expression_to_check()->type_check(symtab, method_map, classtable, curr_class_symbol, _child_to_parent_classmap);
-            curr_feat->set_type(attr_type);
 
         }
 
@@ -851,8 +853,15 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
                                             Symbol class_symbol, 
                                             std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
+     bool disp_was_self = false;
     //must conform to the type as type_name
     Symbol dispatch_class = expr->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap); 
+   
+    if(dispatch_class == SELF_TYPE){
+        disp_was_self = true;
+        dispatch_class = class_symbol;
+   }
+
     if ( !is_subtypeof(dispatch_class, type_name, _child_to_parent_classmap) ){
         ((ClassTableP)classtable)->get_error_stream() << "Static dispatch class did not conform."<<endl;
         ((ClassTableP)classtable)->semant_error();
@@ -880,14 +889,20 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
     }
 
     Symbol ret_type = method_formals[method_formals.size()-1];    // check if the return type is SELF_TYPE
+   
     if ( ret_type == SELF_TYPE ){
-        type = SELF_TYPE;
-        return dispatch_class; // dispatch_class;
-    }  
-    type = ret_type;
+
+      
+        type = dispatch_class;
+        if(disp_was_self){
+            type = SELF_TYPE;
+            return SELF_TYPE;
+        }
+        return dispatch_class; //dispatch_class; 
+    } 
+    type=ret_type;
     return ret_type;
 }
-
 /*
     Normal dispatch has args:
         (Expression expr, Symbol name, Expressions actual;)
@@ -970,9 +985,9 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
     if ( ret_type == SELF_TYPE ){
 
       
-        type= dispatch_class;
+        type = dispatch_class;
         if(disp_was_self){
-            type= SELF_TYPE;
+            type = SELF_TYPE;
             return SELF_TYPE;
         }
         return dispatch_class; //dispatch_class; 
@@ -1280,7 +1295,6 @@ Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
     Symbol initType = init->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
     if(initType== No_type){ initType = type_decl;}
     if(initType== SELF_TYPE){ initType = type_decl;}
-    cout<<initType<<endl;
     if( !is_subtypeof(initType, type_decl, _child_to_parent_classmap) )
     {
         ((ClassTableP)classtable)->get_error_stream() << "the let initialization was not a subtype of the declared type of the var"<<endl;
@@ -1407,7 +1421,7 @@ Symbol Expression_class::least_upper_bound (Symbol symbol1,
                                             Symbol class_symbol, 
                                             std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-   
+    
     if(symbol1 == symbol2) return symbol1;
     if(symbol1 == SELF_TYPE && symbol2 == SELF_TYPE) return SELF_TYPE;
     if(symbol1 == SELF_TYPE && symbol2 != SELF_TYPE) symbol1 = class_symbol;
@@ -1430,7 +1444,7 @@ Symbol Expression_class::least_upper_bound (Symbol symbol1,
     }
 
     if(_child_to_parent_classmap.find(symbol2)!=_child_to_parent_classmap.end()){
-    Symbol parent2 = (_child_to_parent_classmap).find(symbol2)->second;
+    Symbol parent2 = symbol2;
 
     while(true){
         std::list<Symbol>::iterator it;
