@@ -616,25 +616,42 @@ Formals formals_list = curr_feat->get_formals();
             Symbol method_type = (curr_feat->get_expression_to_check())->type_check(symtab, method_map, classtable, curr_class_symbol, _child_to_parent_classmap);
                 //self type
             
-            if(method_type == SELF_TYPE ){
+            //if(method_type == SELF_TYPE ){
 
+             //   method_type = curr_class_symbol;
+           // }
+            Symbol ret_type = curr_feat->get_return_type();
+             
+         //    if(ret_type == SELF_TYPE){
+            
+           //  ret_type = curr_class_symbol;
+                
+             //    if(((ClassTableP)classtable)->is_subtypeof(ret_type, method_type, _child_to_parent_classmap)){
+              //   ret_type = method_type;
+
+              // }
+        // }
+       if( !(( method_type==SELF_TYPE)&&(ret_type==SELF_TYPE) ) ){
+
+            if(method_type == SELF_TYPE ){
                 method_type = curr_class_symbol;
             }
             Symbol ret_type = curr_feat->get_return_type();
-             
-             if(ret_type == SELF_TYPE){
-            
-             ret_type = curr_class_symbol;
-                
-                 if(((ClassTableP)classtable)->is_subtypeof(ret_type, method_type, _child_to_parent_classmap)){
-                 ret_type = method_type;
 
-               }
-         }
-        if ( !((ClassTableP)classtable)->is_subtypeof(method_type, ret_type, _child_to_parent_classmap) ){
+            if(ret_type == SELF_TYPE){
+                ret_type = curr_class_symbol;
+                if(((ClassTableP)classtable)->is_subtypeof(ret_type, method_type, _child_to_parent_classmap)){
+                    ret_type = method_type;
+                }
+            }
+
+
+
+	 if ( !((ClassTableP)classtable)->is_subtypeof(method_type, ret_type, _child_to_parent_classmap) ){
         ((ClassTableP)classtable)->get_error_stream() << "Inferred return type of method does not conform to declared return type."<<endl;
         ((ClassTableP)classtable)->semant_error();
        }
+	}
        curr_feat->set_type(method_type);
             
     
@@ -866,7 +883,7 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
     Symbol ret_type = method_formals[method_formals.size()-1];    // check if the return type is SELF_TYPE
     if ( ret_type == SELF_TYPE ){
         type = SELF_TYPE;
-        return dispatch_class;
+        return type; // dispatch_class;
     }  
     type = ret_type;
     return ret_type;
@@ -954,7 +971,7 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
 
       
       type= SELF_TYPE;
-        return dispatch_class; 
+        return type; //dispatch_class; 
     } 
     type=ret_type;
     return ret_type;
