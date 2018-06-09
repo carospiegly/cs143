@@ -1213,9 +1213,6 @@ Symbol object_class::type_check(    SymbolTable<Symbol,Symbol> *symtab,
     } else {
         type = *type_of_ID;
     }
-    if(name == self){
-        return SELF_TYPE;
-    }
 
     
     return type;
