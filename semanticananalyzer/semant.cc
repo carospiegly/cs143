@@ -652,8 +652,7 @@ Formals formals_list = curr_feat->get_formals();
         ((ClassTableP)classtable)->semant_error();
        }
 	}
-       curr_feat->set_type(method_type);
-            
+      
     
            
         } else {
@@ -883,7 +882,7 @@ Symbol static_dispatch_class::type_check(   SymbolTable<Symbol,Symbol> *symtab,
     Symbol ret_type = method_formals[method_formals.size()-1];    // check if the return type is SELF_TYPE
     if ( ret_type == SELF_TYPE ){
         type = SELF_TYPE;
-        return type; // dispatch_class;
+        return dispatch_class; // dispatch_class;
     }  
     type = ret_type;
     return ret_type;
@@ -899,10 +898,11 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
                                     Symbol class_symbol, 
                                     std::map<Symbol,Symbol> _child_to_parent_classmap)
 {
-
+    bool disp_was_self = false;
     //must conform to the type as type_name
     Symbol dispatch_class = expr->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap); 
    if(dispatch_class == SELF_TYPE){
+    disp_was_self = true;
     dispatch_class = class_symbol;
    }
     std::map<Symbol, Class_> declared_classes_map = ((ClassTableP)classtable)->get_class_map();
@@ -970,8 +970,12 @@ Symbol dispatch_class::type_check(  SymbolTable<Symbol,Symbol> *symtab,
     if ( ret_type == SELF_TYPE ){
 
       
-      type= SELF_TYPE;
-        return type; //dispatch_class; 
+        type= dispatch_class;
+        if(disp_was_self){
+            type= SELF_TYPE;
+            return SELF_TYPE;
+        }
+        return dispatch_class; //dispatch_class; 
     } 
     type=ret_type;
     return ret_type;
@@ -1275,7 +1279,8 @@ Symbol let_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
     
     Symbol initType = init->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
     if(initType== No_type){ initType = type_decl;}
-    
+    if(initType== SELF_TYPE){ initType = type_decl;}
+    cout<<initType<<endl;
     if( !is_subtypeof(initType, type_decl, _child_to_parent_classmap) )
     {
         ((ClassTableP)classtable)->get_error_stream() << "the let initialization was not a subtype of the declared type of the var"<<endl;
@@ -1306,12 +1311,12 @@ Symbol block_class::type_check( SymbolTable<Symbol,Symbol> *symtab,
     for(int i = body->first(); body->more(i); i = body->next(i))
     {
         Symbol curr_expr_type = body->nth(i)->type_check(symtab, method_map, classtable, class_symbol, _child_to_parent_classmap);
-        
         // type of a block is the value of the last expression
        
             type = curr_expr_type;
-       
+
     }
+
     return type;
 }
 
